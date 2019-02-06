@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Hax install hooks.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function hax_install() {
+  drupal_set_message(t('Make sure you copy everything from CopyThisStuff in the hax module directory into sites/all/libraries/webcomponents/ and read the README.md as to how to install if using locally'), 'status');
+}

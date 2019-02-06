@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function hax_install() {
+  backdrop_set_message(t('Make sure you run the commands in the README.md in order for HAX to work.'), 'status');
+}

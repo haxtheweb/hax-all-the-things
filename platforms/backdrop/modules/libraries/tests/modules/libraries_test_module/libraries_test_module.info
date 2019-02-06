@@ -1,0 +1,11 @@
+name = Libraries test module
+description = Tests library detection and loading.
+backdrop = 1.x
+package = Testing
+dependencies[] = libraries
+hidden = TRUE
+
+; Added by Backdrop CMS packaging script on 2015-11-10
+project = libraries
+version = 1.x-2.2.1
+timestamp = 1447227726

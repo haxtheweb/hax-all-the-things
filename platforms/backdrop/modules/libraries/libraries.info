@@ -1,0 +1,10 @@
+name = Libraries
+description = Allows version-dependent and shared usage of external libraries.
+backdrop = 1.x
+type = module
+files[] = tests/libraries.test
+
+; Added by Backdrop CMS packaging script on 2015-11-10
+project = libraries
+version = 1.x-2.2.1
+timestamp = 1447227726

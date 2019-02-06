@@ -1,0 +1,410 @@
+<?php
+
+include_once 'HAXService.php';
+
+/**
+ * @file
+ * Headless Authoring eXperience, all we do is accept calls and make things haxable in the first place.
+ */
+
+define('HAX_DEFAULT_ELEMENTS', 'oer-schema lrn-aside grid-plate tab-list magazine-cover video-player image-compare-slider license-element self-check multiple-choice lrn-table hero-banner task-list media-image lrndesign-blockquote meme-maker a11y-gif-player paper-audio-player wikipedia-query lrn-vocab lrn-math person-testimonial citation-element code-editor place-holder stop-note q-r wave-player');
+/**
+ * Implements hook_permission().
+ */
+function hax_permission() {
+  return array(
+    'use hax' =>  array(
+      'title' => t('Use HAX editor'),
+      'description' => t('Advanced authoring experience that is pulled in from hax capable web components.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function hax_menu() {
+  $items['hax-node-save/%node/%'] = array(
+    'page callback' => '_hax_node_save',
+    'page arguments' => array(1, 2),
+    'type' => MENU_CALLBACK,
+    'access callback' => '_hax_node_access',
+    'access arguments' => array('update', 1),
+  );
+  $items['hax-file-save/%'] = array(
+    'page callback' => '_hax_file_save',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access callback' => '_hax_file_access',
+    'access arguments' => array('create'),
+  );
+  $items['hax-app-store/%'] = array(
+    'page callback' => '_hax_load_app_store',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'user_access',
+    'access arguments' => array('use hax'),
+  );
+  $items['node/%node/hax'] = array(
+    'title' => 'HAX mode',
+    'description' => 'Edit the node with HAX',
+    'page callback' => '_hax_node_form',
+    'page arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'access callback' => '_hax_node_access',
+    'access arguments' => array('update', 1),
+  );
+  $items['admin/config/content/hax'] = array(
+    'title' => 'HAX',
+    'description' => 'Settings for basic customizations to HAX.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('hax_settings'),
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Callback to save just the body field.
+ */
+function _hax_node_save($node, $token) {
+  // ensure we had data PUT here and it is valid
+  if ($_SERVER['REQUEST_METHOD'] == 'PUT' && drupal_valid_token($token, 'hax')) {
+    // load the data from input stream
+    $body = file_get_contents("php://input");
+    $node->body['und'][0]['value'] = $body;
+    if (!isset($node->body['und'][0]['format'])) {
+      $node->body['und'][0]['format'] = filter_default_format();
+    }
+    // check for revision to ensure it's set automatically if globally set
+    $node_options = variable_get('node_options_' . $node->type, array(
+      'status',
+      'promote',
+    ));
+    $node->log = t('saved via HAX');
+    $node->revision = in_array('revision', $node_options);
+    node_save($node);
+    // send back happy headers
+    drupal_add_http_header('Content-Type', 'application/json');
+    // define status
+    drupal_add_http_header('Status', 200);
+    $return = array(
+      'status' => 200,
+      'message' => t('Save successful!'),
+      'data' => $node,
+    );
+    // output the response as json
+    print drupal_json_output($return);
+    exit;
+  }
+}
+
+/**
+ * Callback to assemble the hax app store
+ */
+function _hax_load_app_store($token) {
+  // ensure we had data PUT here and it is valid
+  if (drupal_valid_token($token, 'hax')) {
+    // pull in apps
+    $appStore = module_invoke_all('hax_app_store');
+    drupal_alter('hax_app_store', $appStore);
+    // pull in stax / templates
+    $staxList = module_invoke_all('hax_stax');
+    drupal_alter('hax_stax', $staxList);
+    // pull in blox / layouts
+    $bloxList = module_invoke_all('hax_blox');
+    drupal_alter('hax_blox', $bloxList);
+    // pull in autoloader assets
+    $autoloaderList = module_invoke_all('hax_autoloader');
+    drupal_alter('hax_autoloader', $autoloaderList);
+    // send back happy headers
+    drupal_add_http_header('Content-Type', 'application/json');
+    // define status
+    drupal_add_http_header('Status', 200);
+    $return = array(
+      'status' => 200,
+      'apps' => $appStore,
+      'stax' => $staxList,
+      'blox' => $bloxList,
+      'autoloader' => $autoloaderList,
+    );
+    // output the response as json
+    print drupal_json_output($return);
+    exit;
+  }
+}
+
+/**
+ * Permission + Node access check.
+ */
+function _hax_node_access($op, $node) {
+  if (user_access('use hax') && node_access($op, $node)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Permission + File access check.
+ */
+function _hax_file_access($op) {
+  if (user_access('use hax') && entity_access('create', 'file', $_FILES['file-upload']['type'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Save a file to the file system.
+ */
+function _hax_file_save($token) {
+  $status = 403;
+  // check for the uploaded file from our 1-page-uploader app
+  // and ensure there are entity permissions to create a file of this type
+  if (drupal_valid_token($token, 'hax') && isset($_FILES['file-upload']) && entity_access('create', 'file', $_FILES['file-upload']['type'])) {
+    $upload = $_FILES['file-upload'];
+    // check for a file upload
+    if (isset($upload['tmp_name']) && is_uploaded_file($upload['tmp_name'])) {
+      // get contents of the file if it was uploaded into a variable
+      $data = file_get_contents($upload['tmp_name']);
+      $params = filter_var_array($_GET, FILTER_SANITIZE_STRING);
+      // see if we had a file_wrapper defined, otherwise this is public
+      if (isset($params['file_wrapper'])) {
+        $file_wrapper = $params['file_wrapper'];
+      }
+      else {
+        $file_wrapper = 'public';
+      }
+      // see if Drupal can load from this data source
+      if ($file = file_save_data($data, $file_wrapper . '://' . $upload['name'])) {
+        file_save($file);
+        $file->url = file_create_url($file->uri);
+        $return = array('file' => $file);
+        $status = 200;
+      }
+    }
+  }
+  // send back happy headers
+  drupal_add_http_header('Content-Type', 'application/json');
+  // define status
+  drupal_add_http_header('Status', 200);
+  $return = array(
+    'status' => $status,
+    'data' => $return,
+  );
+  // output the response as json
+  print drupal_json_output($return);
+  exit;
+}
+
+/**
+ * Present the node form but wrap the content in hax-body tag
+ * @param  [type] $node [description]
+ * @return [type]       [description]
+ */
+function _hax_node_form($node) {
+  // set page title
+  drupal_set_title(t('HAX edit @title', array('@title' => $node->title)), PASS_THROUGH);
+  // fake a component to get it into the head of the document, heavy weighting
+  $appStoreConnection = array(
+    'url' => base_path() . 'hax-app-store/' . drupal_get_token('hax'),
+  );
+  // write content to screen, wrapped in tag to do all the work
+  $attributes = array(
+    'align' => variable_get('hax_align', 'left'),
+    'end-point' => base_path() . 'hax-node-save/' . $node->nid . '/' . drupal_get_token('hax'),
+    'body-offset-left' => variable_get('hax_offset_left', 0),
+    'app-store-connection' => json_encode($appStoreConnection),
+    'redirect-location' => base_path() . 'node/' . $node->nid,
+  );
+  // account for autoloaded elements which helps w/ timing issues on boot up
+  $autoloaderstring = variable_get('hax_autoload_element_list', HAX_DEFAULT_ELEMENTS);
+  $autoloader = explode(' ', $autoloaderstring);
+  // push on HTML primatives
+  array_push($autoloader, 'cms-token', 'cms-views', 'cms-block', 'cms-entity', 'p', 'div', 'ol', 'ul', 'li', 'a', 'strong', 'kbd', 'em', 'i', 'b', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'figure', 'img', 'iframe', 'video', 'audio', 'section', 'grid-plate', 'template', 'webview');
+  // allow hijacking these defaults
+  drupal_alter('hax_allowed_tags', $autoloader);
+  $attributes['allowed-tags'] = json_encode($autoloader);
+  // can't reflect attributes to false so just don't add if they are FALSE
+  if (variable_get('hax_hide_panel_ops', FALSE)) {
+    $attributes['hide-panel-ops'] = TRUE;
+  }
+  if (variable_get('hax_open_default', TRUE)) {
+    $attributes['open-default'] = TRUE;
+  }
+  if (variable_get('hax_hide_preferences_button', FALSE)) {
+    $attributes['hide-preferences-button'] = TRUE;
+  }
+
+  // deep developer function to allow full control over tag's properties
+  drupal_alter('hax_cms_hax_attributes', $attributes);
+  $content = '<cms-hax' . drupal_attributes($attributes) . '><template>'
+  . check_markup($node->body['und'][0]['value'], $node->body['und'][0]['format'])
+  .'</template></cms-hax>';
+  return $content;
+}
+
+/**
+ * Helper function to make outline designer settings more obvious.
+ */
+function hax_settings($form, &$form_state) {
+  $form['hax_offset_left'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Offset'),
+    '#default_value' => variable_get('hax_offset_left', 0),
+    '#description' => t("Helps with theme compatibility when positioning the context menu. Adjust this if HAX context menu doesn't correctly align with the side of your content when editing. Value is in pixels but should not include px. Some themes that mess with box-model may or may not have this issue."),
+  );
+  // collapse default state
+  $form['hax_autoload_element_list'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Elements to autoload'),
+    '#default_value' => variable_get('hax_autoload_element_list', HAX_DEFAULT_ELEMENTS),
+    '#maxlength' => 1000,
+    '#description' => t("This allows for auto-loading elements known to play nice with HAX. If you've written any webcomponents that won't automatically be loaded into the page via that module this allows you to attempt to auto-load them when HAX loads. For example, if you have a video-player element in your bower_components directory and want it to load on this interface, this would be a simple way to do that. Spaces only between elements, no comma"),
+  );
+  $hax = new HAXService();
+  $baseApps = $hax->baseSupportedApps();
+  foreach ($baseApps as $key => $app) {
+    $form['hax_' . $key . '_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('@name API key', array('@name' => $app['name'])),
+      '#default_value' => variable_get('hax_' . $key . '_key', ''),
+      '#description' => t('See') . ' ' . l(t('@name developer docs', array('@name' => $app['name'])), $app['docs']) . ' ' . t('for details'),
+    );
+  }
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_hax_app_store().
+ */
+function hax_hax_app_store() {
+  $hax = new HAXService();
+  $apikeys = array();
+  $baseApps = $hax->baseSupportedApps();
+  foreach ($baseApps as $key => $app) {
+    if (variable_get('hax_' . $key . '_key', '') != '') {
+      $apikeys[$key] = variable_get('hax_' . $key . '_key', '');
+    }
+  }
+  $json = $hax->loadBaseAppStore($apikeys);
+  // pull in the core ones we supply
+  if (module_exists('file_entity') && module_exists('restws')) {
+    $tmp = json_decode(_hax_site_connection());
+    array_push($json, $tmp);
+  }
+  return $json;
+}
+
+/**
+ * Implements hook_hax_blox().
+ */
+function hax_hax_blox() {
+  $hax = new HAXService();
+  $blox = $hax->loadBaseBlox();
+  return $blox;
+}
+
+/**
+ * Implements hook_hax_stax().
+ */
+function hax_hax_stax() {
+  $hax = new HAXService();
+  $stax = $hax->loadBaseStax();
+  return $stax;
+}
+
+/**
+ * Implements hook_hax_autoloader().
+ */
+function hax_hax_autoloader() {
+  // generate autoload list
+  $autoloaderstring = variable_get('hax_autoload_element_list', HAX_DEFAULT_ELEMENTS);
+  // blow up based on space
+  $autoloader = explode(' ', $autoloaderstring);
+  return $autoloader;
+}
+
+/**
+ * Connection details for this site. This is where
+ * all the really important stuff is that will
+ * make people freak out.
+ */
+function _hax_site_connection() {
+  global $base_url;
+  $parts = explode('://', $base_url);
+  // built in support when file_entity and restws is in place
+  $json = '{
+    "details": {
+      "title": "' . t('Internal files') . '",
+      "icon": "perm-media",
+      "color": "light-blue",
+      "author": "Drupal",
+      "description": "Drupal site integration for HAX",
+      "tags": ["media", "drupal"]
+    },
+    "connection": {
+      "protocol": "' . $parts[0] . '",
+      "url": "' . $parts[1] . '",
+      "operations": {
+        "browse": {
+          "method": "GET",
+          "endPoint": "file.json",
+          "pagination": {
+            "style": "link",
+            "props": {
+              "first": "page.first",
+              "next": "page.next",
+              "previous": "page.previous",
+              "last": "page.last"
+            }
+          },
+          "search": {
+          },
+          "data": {
+          },
+          "resultMap": {
+            "defaultGizmoType": "image",
+            "items": "list",
+            "preview": {
+              "title": "name",
+              "details": "mime",
+              "image": "url",
+              "id": "uuid"
+            },
+            "gizmo": {
+              "source": "url",
+              "id": "uuid",
+              "title": "name",
+              "type": "type"
+            }
+          }
+        },
+        "add": {
+          "method": "POST",
+          "endPoint": "hax-file-save/' . drupal_get_token('hax') . '",
+          "acceptsGizmoTypes": [
+            "image",
+            "video",
+            "audio",
+            "pdf",
+            "svg",
+            "document",
+            "csv"
+          ],
+          "resultMap": {
+            "item": "data.file",
+            "defaultGizmoType": "image",
+            "gizmo": {
+              "source": "url",
+              "id": "uuid"
+            }
+          }
+        }
+      }
+    }
+  }';
+  return $json;
+}

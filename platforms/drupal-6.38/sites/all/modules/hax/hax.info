@@ -1,0 +1,5 @@
+name = "HAX"
+description = "A completely Headless Authoring eXperience, #haxtheweb."
+core = "6.x"
+package = "Webcomponents"
+dependencies[] = webcomponents

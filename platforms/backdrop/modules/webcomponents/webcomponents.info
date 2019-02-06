@@ -1,0 +1,9 @@
+name = Web components
+description = Provides support for webcomponents to ingest static templates into reusable layout systems.
+backdrop = 1.x
+package = Webcomponents
+version = VERSION
+type = module
+dependencies[] = entity
+dependencies[] = libraries
+configure = admin/config/content/webcomponents

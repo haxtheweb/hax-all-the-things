@@ -1,0 +1,422 @@
+<?php
+/**
+ * @file
+ * Headless Authoring eXperience, all we do is accept calls and make things haxable in the first place.
+ */
+
+include_once 'HAXService.php';
+
+/**
+ * Implements hook_init().
+ */
+function hax_init() {
+  backdrop_add_css(backdrop_get_path('module', 'hax') . '/hax-compat.css');
+}
+
+/**
+ * Implements hook_permission().
+ */
+function hax_permission() {
+  return array(
+    'use hax' =>  array(
+      'title' => t('Use HAX editor'),
+      'description' => t('Advanced authoring experience that is pulled in from hax capable web components.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function hax_menu() {
+  $items['hax-node-save/%node/%'] = array(
+    'page callback' => '_hax_node_save',
+    'page arguments' => array(1, 2),
+    'type' => MENU_CALLBACK,
+    'access callback' => '_hax_node_access',
+    'access arguments' => array('update', 1),
+  );
+  $items['hax-file-save/%'] = array(
+    'page callback' => '_hax_file_save',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access callback' => '_hax_file_access',
+    'access arguments' => array(),
+  );
+  $items['hax-app-store/%'] = array(
+    'page callback' => '_hax_load_app_store',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'user_access',
+    'access arguments' => array('use hax'),
+  );
+  $items['node/%node/hax'] = array(
+    'title' => 'HAX mode',
+    'description' => 'Edit the node with HAX',
+    'page callback' => '_hax_node_form',
+    'page arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'access callback' => '_hax_node_access',
+    'access arguments' => array('update', 1),
+  );
+    $items['admin/config/content/hax'] = array(
+    'title' => 'HAX',
+    'description' => 'Settings for basic customizations to HAX.',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('hax_settings_form'),
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Callback to assemble the hax app store
+ */
+function _hax_load_app_store($token) {
+  // ensure we had data PUT here and it is valid
+  if (backdrop_valid_token($token, 'hax')) {
+    $appStore = module_invoke_all('hax_app_store');
+    backdrop_alter('hax_app_store', $appStore);
+    // pull in stax / templates
+    $staxList = module_invoke_all('hax_stax');
+    backdrop_alter('hax_stax', $staxList);
+    // pull in blox / layouts
+    $bloxList = module_invoke_all('hax_blox');
+    backdrop_alter('hax_blox', $bloxList);
+    // pull in autoloader assets
+    $autoloaderList = module_invoke_all('hax_autoloader');
+    backdrop_alter('hax_autoloader', $autoloaderList);
+    // send back happy headers
+    backdrop_add_http_header('Content-Type', 'application/json');
+    // define status
+    backdrop_add_http_header('Status', 200);
+    $return = array(
+      'status' => 200,
+      'apps' => $appStore,
+      'stax' => $staxList,
+      'blox' => $bloxList,
+      'autoloader' => $autoloaderList,
+    );
+    // output the response as json
+    print backdrop_json_output($return);
+    exit;
+  }
+}
+
+/**
+ * Implements hook_hax_blox().
+ */
+function hax_hax_blox() {
+  $hax = new HAXService();
+  $blox = $hax->loadBaseBlox();
+  return $blox;
+}
+
+/**
+ * Implements hook_hax_stax().
+ */
+function hax_hax_stax() {
+  $hax = new HAXService();
+  $stax = $hax->loadBaseStax();
+  return $stax;
+}
+
+/**
+ * Implements hook_hax_autoloader().
+ */
+function hax_hax_autoloader() {
+  $config = config('hax.settings');
+  // generate autoload list
+  $autoloaderstring = $config->get('hax_autoload_element_list');
+  // blow up based on space
+  $autoloader = explode(' ', $autoloaderstring);
+  return $autoloader;
+}
+
+
+/**
+ * Helper function to make outline designer settings more obvious.
+ */
+function hax_settings_form($form, $form_state) {
+  $config = config('hax.settings');
+  $form['hax_offset_left'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Offset'),
+    '#default_value' => $config->get('hax_offset_left'),
+    '#description' => "Helps with theme compatibility when positioning the context menu. Adjust this if HAX context menu doesn't correctly align with the side of your content when editing. Value is in pixels but should not include px. Some themes that mess with box-model may or may not have this issue.",
+  );
+  // collapse default state
+  $form['hax_autoload_element_list'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Elements to autoload'),
+    '#default_value' => $config->get('hax_autoload_element_list'),
+    '#description' => "This allows for auto-loading elements known to play nice with HAX. If you've written any webcomponents that won't automatically be loaded into the page via that module this allows you to attempt to auto-load them when HAX loads. For example, if you have a video-player element in your bower_components directory and want it to load on this interface, this would be a simple way to do that. Spaces only between elements, no comma",
+    '#maxlength' => 1000
+  );
+  $hax = new HAXService();
+  $baseApps = $hax->baseSupportedApps();
+  foreach ($baseApps as $key => $app) {
+    $form['hax_' . $key . '_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('@name API key', array('@name' => $app['name'])),
+      '#default_value' => $config->get('hax_' . $key . '_key'),
+      '#description' => t('See') . ' ' . l(t('@name developer docs', array('@name' => $app['name'])), $app['docs']) . ' ' . t('for details'),
+    );
+  }
+  // Add a submit button
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for module_settings_form().
+ */
+function hax_settings_form_submit($form, &$form_state) {
+  $config = config('hax.settings');
+  $config->set('hax_offset_left', $form_state['values']['hax_offset_left']);
+  $config->set('hax_autoload_element_list', $form_state['values']['hax_autoload_element_list']);
+  $hax = new HAXService();
+  $baseApps = $hax->baseSupportedApps();
+  foreach ($baseApps as $key => $app) {
+    $config->set('hax_' . $key . '_key', $form_state['values']['hax_' . $key . '_key']);
+  }
+  $config->save();
+
+  backdrop_set_message(t('The configuration options have been saved.'));
+}
+
+/**
+ * Implements hook_config_info().
+ */
+function hax_config_info() {
+  return array(
+    'hax.settings' => array(
+      'label' => t('hax settings'),
+      'group' => t('Configuration'),
+    ),
+  );
+}
+
+/**
+ * Callback to save just the body field.
+ */
+function _hax_node_save($node, $token) {
+  // ensure we had data PUT here and it is valid
+  if ($_SERVER['REQUEST_METHOD'] == 'PUT' && backdrop_valid_token($token, 'hax')) {
+    // load the data from input stream
+    $body = file_get_contents("php://input");
+    $node->body['und'][0]['value'] = $body;
+    if (!isset($node->body['und'][0]['format'])) {
+      $node->body['und'][0]['format'] = filter_default_format();
+    }
+    node_save($node);
+    // send back happy headers
+    backdrop_add_http_header('Content-Type', 'application/json');
+    // define status
+    backdrop_add_http_header('Status', 200);
+    $return = array(
+      'status' => 200,
+      'message' => t('Save successful!'),
+      'data' => $node,
+    );
+    // output the response as json
+    print backdrop_json_output($return);
+  }
+}
+
+/**
+ * Permission + Node access check.
+ */
+function _hax_node_access($op, $node) {
+  if (user_access('use hax') && node_access($op, $node)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Permission + File access check.
+ */
+function _hax_file_access() {
+  if (user_access('use hax') && user_access('upload editor files')) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Save a file to the file system.
+ */
+function _hax_file_save($token) {
+  $status = 403;
+  // check for the uploaded file from our 1-page-uploader app
+  if (backdrop_valid_token($token, 'hax') && isset($_FILES['file-upload'])) {
+    $upload = $_FILES['file-upload'];
+    // check for a file upload
+    if (isset($upload['tmp_name']) && is_uploaded_file($upload['tmp_name'])) {
+      // get contents of the file if it was uploaded into a variable
+      $data = file_get_contents($upload['tmp_name']);
+      $params = filter_var_array($_GET, FILTER_SANITIZE_STRING);
+      // see if we had a file_wrapper defined, otherwise this is public
+      if (isset($params['file_wrapper'])) {
+        $file_wrapper = $params['file_wrapper'];
+      }
+      else {
+        $file_wrapper = 'public';
+      }
+      // see if Backdrop can load from this data source
+      if ($file = file_save_data($data, $file_wrapper . '://' . $upload['name'])) {
+        file_save($file);
+        $file->url = file_create_url($file->uri);
+        $return = array('file' => $file);
+        $status = 200;
+      }
+    }
+  }
+  // send back happy headers
+  backdrop_add_http_header('Content-Type', 'application/json');
+  // define status
+  backdrop_add_http_header('Status', 200);
+  $return = array(
+    'status' => $status,
+    'data' => $return,
+  );
+  // output the response as json
+  print backdrop_json_output($return);
+  exit;
+}
+
+/**
+ * Present the node form but wrap the content in hax-body tag
+ * @param  [type] $node [description]
+ * @return [type]       [description]
+ */
+function _hax_node_form($node) {
+  $config = config('hax.settings');
+  // set page title
+  backdrop_set_title(t('HAX edit @title', array('@title' => $node->title)), PASS_THROUGH);
+  // fake a component to get it into the head of the document, heavy weighting
+  $component = new stdClass();
+  $component->machine_name = 'cms-hax';
+  $component->file = libraries_get_path('webcomponents') . '/polymer/bower_components/cms-hax/cms-hax.html';
+  _webcomponents_add_to_head($component, 10000);
+  $appStoreConnection = array(
+    'url' => base_path() . 'hax-app-store/' . backdrop_get_token('hax'),
+  );
+  // write content to screen, wrapped in tag to do all the work
+  $content = '
+  <cms-hax open-default end-point="' . base_path() . 'hax-node-save/' . $node->nid . '/' . backdrop_get_token('hax') . '" body-offset-left="' . $config->get('hax_offset_left') . '" app-store-connection=' . "'" . json_encode($appStoreConnection) . "'" . '>'
+  . '<template>' . 
+    check_markup($node->body['und'][0]['value'], $node->body['und'][0]['format'])
+  .'</template></cms-hax>';
+  return $content;
+}
+
+/**
+ * Implements hook_hax_app_store().
+ */
+function hax_hax_app_store() {
+  $config = config('hax.settings');
+  $hax = new HAXService();
+  $apikeys = array();
+  $baseApps = $hax->baseSupportedApps();
+  foreach ($baseApps as $key => $app) {
+    if ($config->get('hax_' . $key . '_key') != '') {
+      $apikeys[$key] = $config->get('hax_' . $key . '_key');
+    }
+  }
+  $json = $hax->loadBaseAppStore($apikeys);
+  // pull in the core one we supply, though only upload works currently
+  $tmp = json_decode(_hax_site_connection());
+  array_push($json, $tmp);
+  return $json;
+}
+
+/**
+ * Connection details for this site. This is where
+ * all the really important stuff is that will
+ * make people freak out.
+ */
+function _hax_site_connection() {
+  global $base_url;
+  $parts = explode('://', $base_url);
+  // built in support when file_entity and restws is in place
+  $json = '{
+    "details": {
+      "title": "' . t('Internal files') . '",
+      "icon": "perm-media",
+      "color": "light-blue",
+      "author": "Backdrop",
+      "description": "Backdrop site integration for HAX",
+      "tags": ["media", "backdrop"]
+    },
+    "connection": {
+      "protocol": "' . $parts[0] . '",
+      "url": "' . $parts[1] . '",
+      "operations": {
+        "browse": {
+          "method": "GET",
+          "endPoint": "file.json",
+          "pagination": {
+            "style": "link",
+            "props": {
+              "first": "page.first",
+              "next": "page.next",
+              "previous": "page.previous",
+              "last": "page.last"
+            }
+          },
+          "search": {
+          },
+          "data": {
+          },
+          "resultMap": {
+            "defaultGizmoType": "image",
+            "items": "list",
+            "preview": {
+              "title": "name",
+              "details": "mime",
+              "image": "url",
+              "id": "uuid"
+            },
+            "gizmo": {
+              "source": "url",
+              "id": "uuid",
+              "title": "name",
+              "type": "type"
+            }
+          }
+        },
+        "add": {
+          "method": "POST",
+          "endPoint": "hax-file-save/' . backdrop_get_token('hax') . '",
+          "acceptsGizmoTypes": [
+            "image",
+            "video",
+            "audio",
+            "pdf",
+            "svg",
+            "document",
+            "csv"
+          ],
+          "resultMap": {
+            "item": "data.file",
+            "defaultGizmoType": "image",
+            "gizmo": {
+              "source": "url",
+              "id": "uuid"
+            }
+          }
+        }
+      }
+    }
+  }';
+  return $json;
+}

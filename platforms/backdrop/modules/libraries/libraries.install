@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * @file
+ * Install, uninstall, and update functions for libraries.module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function libraries_schema() {
+  $schema['cache_libraries'] = backdrop_get_schema_unprocessed('system', 'cache');
+  $schema['cache_libraries']['description'] = 'Cache table to store library information.';
+  return $schema;
+}
+
+/**
+ * Implements hook_update_last_removed().
+ */
+function libraries_update_last_removed() {
+  return 7200;
+}
+
+/**
+ * Move libraries settings from variables to config.
+ */
+function libraries_update_1000() {
+    // Migrate variables to config.
+    $config = config('libraries.settings');
+    $config->set('libraries_test_module_cache', update_variable_get('libraries_test_module_cache', false));
+    $config->save();
+
+    // Delete variables.
+    update_variable_del('libraries_test_module_cache');
+}

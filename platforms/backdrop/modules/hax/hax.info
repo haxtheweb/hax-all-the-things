@@ -1,0 +1,8 @@
+name = "HAX"
+description = "A completely Headless Authoring eXperience, #haxtheweb."
+backdrop = 1.x
+package = Webcomponents
+version = VERSION
+type = module
+dependencies[] = webcomponents
+configure = admin/config/content/hax

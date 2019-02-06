@@ -1,0 +1,289 @@
+<?php
+
+/**
+ * @file
+ * Headless Authoring eXperience, accept calls and make things haxable.
+ */
+
+use Drupal\hax\HaxService;
+
+/**
+ * Implements hook_preprocess_hook().
+ *
+ * Add cms-hax tag and related markup as wrapper to body field.
+ */
+function hax_preprocess_field(&$vars) {
+
+  // Supporting attachments handled in hax_page_attachments().
+  // Allow for cache variability based on route name so this can be handled
+  // evaluated separately for the view and the hax mode tabs.
+  $vars['#cache']['contexts'][] = 'route.name';
+
+  if (!hax_is_current_route_supported()) {
+    return;
+  }
+
+  $entity_type = $vars['element']['#object']->getEntityTypeId();
+  $view_mode = $vars['element']['#view_mode'];
+
+  if ($vars['field_name'] == 'body' && $entity_type == 'node' && $view_mode == 'full'
+    && \Drupal::config('hax.settings')->get('hax_autoload_element_node_view')) {
+
+    $appStoreConnection = json_encode([
+      'url' => base_path() . 'hax-app-store/' . \Drupal::csrfToken()->get(),
+    ]);
+
+    // Get the NID from current path.
+    $request = \Drupal::request();
+    $current_path = $request->getPathInfo();
+    $path_args = explode('/', $current_path);
+    $node_id = $path_args[2];
+
+    // TODO Not ideal, but we've fallen back to using the body text instead of
+    // prefix/suffix due to filtering. This will go through the node's selected
+    // text format for render.
+    // @todo: convert to string replacement function or template.
+    $vars['items'][0]['content']['#text'] = '<cms-hax open-default end-point="' . base_path() . 'hax-node-save/' . $node_id . '/' . \Drupal::csrfToken()
+        ->get() . '" body-offset-left="' . \Drupal::config('hax.settings')
+        ->get('hax_offset_left') . '" app-store-connection=' . "'" . $appStoreConnection . "'" . '><template>'
+     . $vars['items'][0]['content']['#text'] . '</template></cms-hax>';
+
+  }
+
+}
+
+/**
+ * Implements hook_hax_app_store().
+ */
+function hax_hax_app_store() {
+
+  $config = \Drupal::config('hax.settings');
+
+  $hax = new HaxService();
+  $apikeys = [];
+  $baseApps = $hax->baseSupportedApps();
+  foreach ($baseApps as $key => $app) {
+
+    if ($config->get('hax_' . $key . '_key') != '') {
+      $apikeys[$key] = $config->get('hax_' . $key . '_key');
+    }
+
+  }
+  $json = $hax->loadBaseAppStore($apikeys);
+  // Pull in the core ones we supply.
+  if (\Drupal::moduleHandler()->moduleExists('file')) {
+    $tmp = json_decode(_hax_site_connection());
+    array_push($json, $tmp);
+  }
+  return $json;
+}
+
+/**
+ * Implements hook_hax_blox().
+ */
+function hax_hax_blox() {
+  $hax = new HAXService();
+  $blox = $hax->loadBaseBlox();
+  return $blox;
+}
+
+/**
+ * Implements hook_hax_stax().
+ */
+function hax_hax_stax() {
+  $hax = new HAXService();
+  $stax = $hax->loadBaseStax();
+  return $stax;
+}
+
+/**
+ * Implements hook_hax_autoloader().
+ */
+function hax_hax_autoloader() {
+  // Generate autoload list.
+  $autoloaderstring = \Drupal::config('hax.settings')
+    ->get('hax_autoload_element_list');
+  // Blow up based on space.
+  $autoloader = explode(' ', $autoloaderstring);
+  return $autoloader;
+}
+
+/**
+ * Hax site connection.
+ *
+ * Connection details for this site. This is where all the really important
+ * stuff is that will make people freak out.
+ */
+function _hax_site_connection() {
+  global $base_url;
+  $parts = explode('://', $base_url);
+  // Built in support when file_entity and restws is in place.
+  $title = t('Internal files');
+  $json = '{
+    "details": {
+      "title": "' . $title . '",
+      "icon": "perm-media",
+      "color": "light-blue",
+      "author": "Drupal",
+      "description": "Drupal site integration for HAX",
+      "tags": ["media", "drupal"]
+    },
+    "connection": {
+      "protocol": "' . $parts[0] . '",
+      "url": "' . $parts[1] . '",
+      "operations": {
+        "browse": {
+          "method": "GET",
+          "endPoint": "file.json",
+          "pagination": {
+            "style": "link",
+            "props": {
+              "first": "page.first",
+              "next": "page.next",
+              "previous": "page.previous",
+              "last": "page.last"
+            }
+          },
+          "search": {
+          },
+          "data": {
+          },
+          "resultMap": {
+            "defaultGizmoType": "image",
+            "items": "list",
+            "preview": {
+              "title": "name",
+              "details": "mime",
+              "image": "url",
+              "id": "uuid"
+            },
+            "gizmo": {
+              "source": "url",
+              "id": "uuid",
+              "title": "name",
+              "type": "type"
+            }
+          }
+        },
+        "add": {
+          "method": "POST",
+          "endPoint": "hax-file-save/' . \Drupal::csrfToken()->get() . '",
+          "acceptsGizmoTypes": [
+            "image",
+            "video",
+            "audio",
+            "pdf",
+            "svg",
+            "document",
+            "csv"
+          ],
+          "resultMap": {
+            "item": "data.file",
+            "defaultGizmoType": "image",
+            "gizmo": {
+              "source": "url",
+              "id": "uuid"
+            }
+          }
+        }
+      }
+    }
+  }';
+  return $json;
+}
+
+/**
+ * Implements hook_page_attachments().
+ *
+ * Load all attachments for this page.
+ */
+function hax_page_attachments(array &$attachments) {
+  $location = \Drupal::config('hax.settings')->get('hax_project_location');
+  // append base_path if this site has a url to start it
+  if (strpos($location, 'http') === FALSE) {
+    $location = base_path() . $location;
+  }
+  $wc = new WebComponentsService();
+  $attachments['#attached']['html_head'][] = [
+    [
+    '#type' => 'inline_template',
+    '#template' => '{{ somecontent|raw }}',
+    '#context' => [
+      'somecontent' => $wc->applyWebcomponents($location)
+    ],
+    'webcomponents']
+  ];
+}
+
+
+/**
+ * Identify whether the current route is supported for HAX deployment.
+ *
+ * @return bool
+ *   TRUE if the current route is supported.
+ */
+function hax_is_current_route_supported() {
+
+  $route_name = \Drupal::routeMatch()->getRouteName();
+
+  if ($route_name == 'hax.node_form') {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Class for implementing web component polyfills and other header aspects in a uniform manner
+ */
+class WebComponentsService {
+  /**
+   * This applies all pieces of a standard build appended to the header
+   */
+  public function applyWebcomponents($directory = '/') {
+    return 
+      $this->getPolyfill($directory) .
+      $this->getBabel($directory) .
+      $this->getBuild($directory);
+  }
+  /**
+   * Return the polyfill standard method of application
+   */
+  public function getPolyfill($directory = '/') {
+    return '<!-- cross platform polyfill -->
+    <script>if (!window.customElements) { document.write("<!--") }</script>
+    <script defer="defer" type="text/javascript" src="' . $directory . 'build/es6/node_modules/@webcomponents/webcomponentsjs/custom-elements-es5-adapter.js"></script>
+    <!--! do not remove -->
+    <script defer="defer" src="' . $directory . 'build/es6/node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+    <script defer="defer" src="' . $directory . 'build/es6/node_modules/web-animations-js/web-animations-next-lite.min.js"></script>
+    <!-- / cross platform polyfill -->';  
+  }
+  /**
+   * Get babel helpers to ensure compiled versions have appropriate functions
+   */
+  public function getBabel($directory = '/') {
+    return '<!-- babel -->
+    <script src="' . $directory . 'babel/babel-top.js"></script>
+    <script src="' . $directory . 'babel/babel-bottom.js"></script>
+    <!-- / babel -->';
+  }
+
+  /**
+   * Front end logic for ES5 or ES6 version to deliver
+   */
+  public function getBuild($directory  = '/') {
+    return '<!-- web component build -->
+    <script nomodule>window.nomodule = true;</script>
+    <script>
+      function __supportsImports() { try { new Function(\'import("")\'); return true; } catch (err) { return false; } }
+      // lack of es modules or dynamic imports requires amd-es5 bundle
+      if (window.nomodule || !__supportsImports()) {
+        define(["' . $directory . 'build/es5-amd/build.js"], function () { "use strict" });
+        document.write("<!--")
+      }
+    </script>
+    <script type="module" defer="defer" src="' . $directory . 'build/es6/build.js"></script>
+    <!--! do not remove -->
+    <!-- / web component build -->';
+  }
+}

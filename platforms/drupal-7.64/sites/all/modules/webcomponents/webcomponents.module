@@ -1,0 +1,441 @@
+<?php
+/**
+ * @file Web components integration
+ */
+
+define('WEBCOMPONENTS_CLASS_IDENTIFIER', 'webcomponent-module-selector');
+include_once 'WebComponentsService.php';
+
+/**
+ * Implements hook_menu().
+ */
+function webcomponents_menu() {
+  $items = array();
+  $items['admin/config/content/webcomponents'] = array(
+    'title' => 'Web components',
+    'description' => 'Settings for basic customizations to web components.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webcomponents_admin_settings'),
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Set CDN if you want
+ */
+function webcomponents_admin_settings($form, &$form_state) {
+  $form['webcomponents_project_location'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CDN location'),
+    '#default_value' => variable_get('webcomponents_project_location', 'sites/all/libraries/webcomponents/'),
+    '#description' => t("Base path needs to start without a slach and end with a slash. This supports CDNs as well."),
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function webcomponents_page_build(&$page) {
+  $location = variable_get('webcomponents_project_location', 'sites/all/libraries/webcomponents/');
+  // append base_path if this site has a url to start it
+  if (strpos($location, 'http') === FALSE) {
+    $location = base_path() . $location;
+  }
+  // load webcomponentsjs polyfill library if it exists
+  $wc = new WebComponentsService();
+  $element = array(
+    '#type' => 'markup',
+    '#markup' => $wc->applyWebcomponents($location),
+  );
+  drupal_add_html_head($element, 'webcomponents');
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function webcomponents_entity_info() {
+  $info = array();
+  $info['webcomponent'] = array(
+    'label' => t('Web component'),
+    'base table' => 'webcomponents',
+    'entity keys' => array(
+      'id' => 'wid',
+      'label' => 'title',
+      'bundle' => 'type',
+    ),
+    'uri callback' => 'webcomponent_uri',
+    'module' => 'webcomponents',
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'fieldable' => FALSE,
+    'bundle keys' => array(
+      'bundle' => 'type',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * URI callback for entity
+ */
+function webcomponent_uri($webcomponent) {
+  return array(
+    'path' => 'webcomponent/' . $webcomponent->machine_name,
+  );
+}
+
+/**
+ * Return output for rendering a component
+ * @param  array $component fully loaded webcomponent entity.
+ * @return string            rendered representation of the component
+ */
+function _webcomponents_render_component($component) {
+  if (isset($component->properties)) {
+    if (!is_array($component->properties)) {
+      $component->properties = unserialize($component->properties);
+    }
+    // support token replacement of properties passed in
+    foreach ($component->properties as &$property) {
+      $property = token_replace($property);
+    }
+    $vars = array(
+      'tag' => $component->machine_name,
+      'properties' => $component->properties,
+    );
+    // support compressing slots into the innerHTML tag
+    if (isset($component->slots)) {
+      // support single slot name
+      if (is_string($component->slots)) {
+        $vars['innerHTML'] = $component->slots;
+      }
+      // support for multiple slot names
+      else if (is_array($component->slots)) {
+        $vars['innerHTML'] = '';
+        foreach ($component->slots as $name => $content) {
+          $vars['innerHTML'] .= '<span slot="' . $name . '">' . $content . '</span>';
+        }
+      }
+    }
+    if (!isset($vars['properties']['class'])) {
+      $vars['properties']['class'] = WEBCOMPONENTS_CLASS_IDENTIFIER;
+    }
+    else {
+      $vars['properties']['class'] .= ' ' . WEBCOMPONENTS_CLASS_IDENTIFIER;
+    }
+    // allow other projects to add onto and modify the webcomponent before it renders
+    // useful for tag wrapping for systems like HAX
+    drupal_alter('webcomponent_render', $vars, $component);
+    $output = theme('webcomponent', $vars);
+    return $output;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function webcomponents_theme() {
+  // test all components on the file system against what's
+  // in the database to ensure the data models haven't changed
+  _webcomponents_rebuild();
+  // hilariously minor template
+  return array(
+    'webcomponent' => array(
+      'variables' => array(
+        'tag' => '',
+        'properties' => array(),
+        'innerHTML' => '',
+        'wrap_tag' => '',
+        'wrap_tag_close' => '',
+      ),
+      'render element' => 'element',
+      'template' => 'webcomponent',
+      'path' => drupal_get_path('module', 'webcomponents') . '/templates',
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function webcomponents_entity_update($entity, $type) {
+  // perform check for everything that IS NOT a webcomponent since that's circular
+  if ($type != 'webcomponent' && isset($entity->webcomponents_additional) && !empty($entity->webcomponents_additional)) {
+    // load entity info so we can grab the generic id and revision keys
+    $info = entity_get_info($type);
+    // insert into this table based on the revision and all known webcomponent
+    // additional field data that we've stored
+    db_insert('webcomponents_content')
+    ->fields(array(
+      'etid' => $entity->{$info['entity keys']['id']},
+      'etvid' => $entity->{$info['entity keys']['revision']},
+      'etype' => $type,
+      'additional_properties' => serialize($entity->webcomponents_additional),
+    ))
+    ->execute();
+  }
+}
+
+/**
+ * Implements hook_entity_load().
+ */
+function webcomponents_entity_load($entities, $type) {
+  if ($type == 'webcomponent') {
+    // unpack properties
+    foreach ($entities as $entity) {
+      $entity->properties = unserialize($entity->properties);
+    }
+  }
+  // allow any other entity to utilize the built in webcomponent_content map
+  else {
+    // ensure table exists, goofy issue where this can happen during install
+    if (db_table_exists('webcomponents_content')) {
+      $info = entity_get_info($type);
+      foreach ($entities as $entity) {
+        $query = db_select('webcomponents_content', 'wc');
+        // match entity type
+        $query->condition('wc.etype', $type, '=');
+        // snag this entity id
+        $query->condition('wc.etid', $entity->{$info['entity keys']['id']}, '=');
+        // snag this revision if it exists
+        if ($info['entity keys']['revision']) {
+          $query->condition('wc.etvid', $entity->{$info['entity keys']['revision']}, '=');
+        }
+        // return additional properties since this will have the mapping
+        $query->fields('wc', array('additional_properties'));
+        // execute
+        $result = $query->execute();
+        // Build up the array of data to add to the entity
+        foreach ($result->fetchAll() as $row) {
+          $entity->webcomponents_additional = unserialize($row->additional_properties);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Load all webcomponents in the database.
+ * @return array array of entities or empty.
+ */
+function webcomponents_load_all($force_rebuild = FALSE) {
+  $entities = &drupal_static(__FUNCTION__);
+  // @ignore druplart_conditional_assignment
+  if (!$entities) {
+    if (!$force_rebuild && $cached = cache_get('webcomponents')) {
+      $entities = $cached->data;
+    }
+    else {
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'webcomponent');
+      $query->execute();
+      $result = $query->execute();
+      // flip the results if it found them
+      if (isset($result['webcomponent'])) {
+        $keys = array_keys($result['webcomponent']);
+        $entities = entity_load('webcomponent', $keys);
+      }
+      else {
+        $entities = array();
+      }
+      cache_set('webcomponents', $entities);
+    }
+  }
+  return $entities;
+}
+
+/**
+ * Helper function to return all components as an array of tag names.
+ */
+function _webcomponents_all_tags() {
+  $tags = array();
+  $components = webcomponents_load_all();
+  foreach ($components as $component) {
+    $tags[] = $component->machine_name;
+  }
+  return $tags;
+}
+
+/**
+ * Rebuild webcomponents from the file system.
+ */
+function _webcomponents_rebuild($hide_messages = FALSE) {
+  // force rebuild of components from static
+  $processed = array();
+  // load all possible web components
+  $componentfiles = webcomponents_load_webcomponents_files();
+  // build the registry of possible component types
+  $registry = _webcomponents_build_registry();
+  // loop through results found, tagged by format they are in
+  foreach ($componentfiles as $format => $files) {
+    // process each file based on user defined callback for
+    // how we've been told to handle processing of this component type
+    if (!empty($files)) {
+      foreach ($files as $file) {
+        if (isset($registry[$format])) {
+          $processed[$file] = call_user_func($registry[$format]['process'], $file);
+          // ensure there was actually a match of some kind in there
+          // with support for multiple element definitions per file
+          if (!empty($processed[$file]) && is_array($processed[$file])) {
+            foreach ($processed[$file] as $component) {
+              // try and load webcomponent by machine name
+              if (isset($component->machine_name) && $entity = webcomponent_load_by_name($component->machine_name)) {
+                foreach ($component as $key => $value) {
+                  // see if any aspects changed
+                  if ($key != 'file' && isset($entity->{$key}) && $entity->{$key} != $value) {
+                    if (!$hide_messages && !variable_get('webcomponents_hide_messages', FALSE)) {
+                      drupal_set_message(t('Web components have changed! Make sure that your attributes are correctly reflected in your site. @key changed on @machine from @old to @new', array('@key' => $key, '@old' => serialize($entity->{$key}), '@new' => serialize($value), '@machine' => $component->machine_name)), 'warning', TRUE);
+                    }
+                    $entity->{$key} = $value;
+                  }
+                }
+                if (is_array($entity->properties)) {
+                  $entity->properties = serialize($entity->properties);
+                }
+                entity_save('webcomponent', $entity);
+              }
+              else {
+                // try and create the entity instead
+                if (!empty($component->properties)) {
+                  $component->properties = serialize($component->properties);
+                }
+                // ensure the file wasn't empty
+                if (isset($component->machine_name)) {
+                  $entity = entity_create('webcomponent', (array)$component);
+                  entity_save('webcomponent', $entity);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Get path and allow people to override it, this helps with supporting
+ * CDNs and other things.
+ */
+function _webcomponents_base_path() {
+  $path = base_path();
+  // allow other developers to modify this from base path to another directory
+  drupal_alter('webcomponents_base_path', $path);
+  return $path;
+}
+
+/**
+ * Return all available web component types registered.
+ * Basically just that they have a callback so we know how
+ * to process and convert them from static into database driven.
+ * @return array array of possible formats and callbacks
+ */
+function _webcomponents_build_registry() {
+  $formats = module_invoke_all('register_component_format');
+  drupal_alter('register_component_format', $formats);
+  return $formats;
+}
+
+/**
+ * Assembles components available to Drupal.
+ * @return array files where components live
+ */
+function webcomponents_load_webcomponents_files() {
+  $componentfiles = module_invoke_all('webcomponents');
+  drupal_alter('webcomponents', $components);
+  return $componentfiles;
+}
+
+/**
+ * Load webcomponent by name
+ * @param  string $name machine name of a webcomponent
+ * @return object       fully loaded entity
+ */
+function webcomponent_load_by_name($name) {
+  $entity = FALSE;
+  $query = new EntityFieldQuery();
+  $result = $query
+  ->entityCondition('entity_type', 'webcomponent')
+  ->propertyCondition('machine_name', $name)
+  ->range(0, 1)
+  ->execute();
+  // flip the results if it found them
+  if (isset($result['webcomponent'])) {
+    $tmp = array_pop($result['webcomponent']);
+    $entity = entity_load_single('webcomponent', $tmp->wid);
+  }
+  return $entity;
+}
+
+/**
+ * Sniff out html files in a directory
+ * @param  string $dir a directory to search for .html includes
+ * @return array       an array of html files to look for web components in
+ */
+function _webcomponents_find_includes($dir, $ignore = array(), $find = '.js') {
+  $files = array();
+  // common things to ignore
+  $ignore[] = '.';
+  $ignore[] = '..';
+  $ignore[] = 'index.html';
+  $ignore[] = 'node_modules';
+  $ignore[] = 'demo';
+  if (is_dir($dir)) {
+    // step into the polymer directory and find all html templates
+    $di = new DirectoryIterator(DRUPAL_ROOT . '/' . $dir);
+    foreach ($di as $fileinfo) {
+      $fname = $fileinfo->getFilename();
+      // check for our find value skipping ignored values
+      if (strpos($fname, $find) && !in_array($fname, $ignore)) {
+        $files[] = $dir . $fileinfo->getFilename();
+      }
+      elseif (is_dir($dir . $fname) && !in_array($fname, $ignore)) {
+        $di2 = new DirectoryIterator($dir . $fname);
+        foreach ($di2 as $fileinfo2) {
+          $fname2 = $fileinfo2->getFilename();
+          // check for our find value skipping ignored values
+          if (strpos($fname2, $find) && !in_array($fname2, $ignore)) {
+            $files[] = $dir . $fname . '/' . $fname2;
+          }
+          elseif (is_dir($dir . $fname . '/' . $fname2) && !in_array($fname2, $ignore)) {
+            $di3 = new DirectoryIterator($dir . $fname . '/' . $fname2);
+            foreach ($di3 as $fileinfo3) {
+              $fname3 = $fileinfo3->getFilename();
+              // check for our find value skipping ignored values
+              if (strpos($fname3, $find) && !in_array($fname3, $ignore)) {
+                $files[] = $dir . $fname . '/' . $fname2 . '/' . $fname3;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return $files;
+}
+
+/**
+ * Implements hook_webcomponent_attached_files_alter().
+ */
+function webcomponents_webcomponent_attached_files_alter(&$files) {
+  $libraries = libraries_get_libraries();
+  $configfile = DRUPAL_ROOT . '/' . $libraries['webcomponents'] . '/webcomponents.json';
+  // support for a webcomponents.json file to tell us what to append
+  if (file_exists($configfile)) {
+    $file = file_get_contents($configfile);
+    $config = json_decode($file);
+    foreach ($files as $fname => $file) {
+      // ensure name is NOT relative to this site for comparison
+      // as the webcomponents.json file will be relative to where
+      // it was placed and not the site it's being utilized in
+      $nameTest = str_replace($libraries['webcomponents'] . '/', '', $fname);
+      // remove things if they don't appear
+      if (!in_array($nameTest, $config->elements)) {
+        unset($files[$fname]);
+      }
+    }
+  }
+}
