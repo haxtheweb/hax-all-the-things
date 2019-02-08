@@ -14,7 +14,7 @@
         "symfony/console": "~3.4",
         "symfony/event-dispatcher": "~3.4",
         "symfony/var-dumper": "~3.4",
-        "symfony/polyfill-iconv": "~1.0",
+        "symfony/polyfill-iconv": "~1.10",
         "doctrine/cache": "^1.6",
         "doctrine/collections": "^1.4",
         "psr/simple-cache": "^1.0",
