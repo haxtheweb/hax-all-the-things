@@ -12,6 +12,6 @@ Again, do not use this unless you're just trying to play with stuff rapidly.
 
 ## Using this
 So you ignored the advise above. Great, we love people that break things!
-The idea is to go into any of the platforms in the `platforms` directory and then run `ddev start` and get a working copy of that system with all the dependencies in place. You'll have to go to the modules / plugins / extensions page of each system (except HAXcms) and enable the hax / web components modules. But all the compiling has been done ahead of time and files put in the right place.
+The idea is to go into any of the platforms in the `platforms` directory by running `ddev start` from the base of this repo. We've set everything in motion so that you can install HAX on all of the platforms listed (Drupal 6 is weird but rest work). This skips all the compiling and needing to understand where things go.
 
-Again, do not use this for productions usage as these versions will fall out of date with other newer versions / releases of the projects in here (HAX included).
+Again, do not use this for productions usage as these versions will fall out of date with other newer versions / releases of the projects in here (HAX included). This is intended to show you an example how to get these up and going if you learn better by picking things apart.
