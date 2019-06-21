@@ -1,5 +1,5 @@
 #!/bin/bash
-# Welcome to HAXCMS. Decentralize already.
+# Welcome to HAXcms. Decentralize all the things.
 
 # where am i? move to where I am. This ensures source is properly sourced
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -34,18 +34,27 @@ fi
 if [ ! -d "_config" ]; then
   mkdir _config
 fi
+if [ ! -d "_published" ]; then
+  mkdir _published
+fi
+if [ ! -d "_archived" ]; then
+  mkdir _archived
+fi
 if [ ! -d "_config/.ssh" ]; then
   mkdir _config/.ssh
 fi
-# migrate if legacy
-if [ -f "_config/sites.json" ]; then
-  mv "_config/sites.json" "_sites/sites.json"
+if [ ! -d "_config/tmp" ]; then
+  mkdir _config/tmp
 fi
-if [ ! -f "_sites/sites.json" ]; then
-  cp system/boilerplate/systemsetup/sites.json _sites/sites.json
+if [ ! -d "_config/node_modules" ]; then
+  mkdir _config/node_modules
 fi
+# work on config boilerplate
 if [ ! -f "_config/config.json" ]; then
   cp system/boilerplate/systemsetup/config.json _config/config.json
+fi
+if [ ! -f "_config/my-custom-elements.js" ]; then
+  cp system/boilerplate/systemsetup/my-custom-elements.js _config/my-custom-elements.js
 fi
 if [ ! -f "_config/config.php" ]; then
   cp system/boilerplate/systemsetup/config.php _config/config.php
@@ -54,10 +63,12 @@ if [ ! -f "_config/.htaccess" ]; then
   cp system/boilerplate/systemsetup/.htaccess _config/.htaccess
 fi
 # may need to revisit this at some point
-sudo chmod 777 _sites
-sudo chmod 775 _config
-sudo chmod 777 _config/config.json
-sudo chmod 777 _sites/sites.json
+chmod 775 _config
+chmod 777 _config/tmp
+chmod 777 _config/config.json
+chmod 777 _sites
+chmod 775 _published
+chmod 775 _archived
 
 # place this in VC just so it COULD be tracked by the user
 cd _sites
@@ -101,9 +112,11 @@ fi
 # account for www user messaging, which is not required
 if [ -z ${wwwuser} ]; then
   # I've got a bad feeling about this
-  haxwarn "did nothing, make sure your web server user can write to _sites"
+  haxwarn "did nothing, make sure your web server user can write to _sites, _published, _archived"
 else
-  sudo chown ${wwwuser}:${wwwgrp} _sites
+  chown ${wwwuser}:${wwwgrp} _sites
+  chown ${wwwuser}:${wwwgrp} _published
+  chown ${wwwuser}:${wwwgrp} _archived
 fi
 
 # you get candy if you reference this
@@ -111,11 +124,11 @@ haxecho ""
 haxecho "╔✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻✻╗"
 haxecho "║                Welcome to the decentralization.               ║"
 haxecho "║                                                               ║"
-haxwarn "║                   H  H      AAA     X   X                     ║"
-haxwarn "║                   H  H     A   A     X X                      ║"
-haxwarn "║                   HHHH     AAAAA      X                       ║"
-haxwarn "║                   H  H     A   A     X X                      ║"
-haxwarn "║                   H  H     A   A    X   X                     ║"
+haxwarn "║     H  H      AAA     X   X     CCC      M   M     SSSS       ║"
+haxwarn "║     H  H     A   A     X X     C   C    M M M M   S           ║"
+haxwarn "║     HHHH     AAAAA      X      C        M  M  M    SSSS       ║"
+haxwarn "║     H  H     A   A     X X     C   C    M     M        S      ║"
+haxwarn "║     H  H     A   A    X   X     CCC     M     M    SSSS       ║"
 haxecho "║                                                               ║"
 haxecho "╟───────────────────────────────────────────────────────────────╢"
 haxecho "║ If you have issues, submit them to                            ║"
