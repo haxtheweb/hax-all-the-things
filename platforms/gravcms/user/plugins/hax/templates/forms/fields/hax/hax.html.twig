@@ -1,0 +1,16 @@
+{% block field %}
+	<div class="form-field {{ field.classes|default('') }}">
+		<div class="form-data">
+			<wysiwyg-hax
+				open-default
+				align="left"
+				app-store-connection='{{ appStoreConnection }}'
+				body-offset-left="{{ bodyOffsetLeft }}"
+				field-name="{{ (scope ~ field.name)|fieldName }}"
+				class="hax-editor"
+			>
+			{{ haxSlotArea|raw }}
+		  </wysiwyg-hax>
+		</div>
+	</div>
+{% endblock %}
