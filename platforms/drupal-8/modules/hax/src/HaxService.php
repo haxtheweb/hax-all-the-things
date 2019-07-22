@@ -2,13 +2,7 @@
 
 namespace Drupal\hax;
 
-/**
- * Class HaxService.
- *
- * @package Drupal\hax
- */
 class HAXService {
-
   /**
    * returns an array of app store definitions based
    * on passing in the apikeys for the ones we have
@@ -984,7 +978,7 @@ class HAXService {
         "author": "ELMS:LN",
         "icon": "hax:6/6",
         "status": "available",
-        "layout": "6/6"
+        "layout": "1-1"
       },
       "blox": [
         {
@@ -1017,9 +1011,10 @@ class HAXService {
         "author": "ELMS:LN",
         "icon": "hax:8/4",
         "status": "available",
-        "layout": "8/4"
+        "layout": "2-1"
       },
-      "blox": [{
+      "blox": [
+        {
           "tag": "place-holder",
           "properties": {
             "slot": "col-1",
@@ -1043,7 +1038,7 @@ class HAXService {
         "author": "ELMS:LN",
         "icon": "hax:4/4/4",
         "status": "available",
-        "layout": "4/4/4"
+        "layout": "1-1-1"
       },
       "blox": [
         {
@@ -1078,7 +1073,7 @@ class HAXService {
         "author": "ELMS:LN",
         "icon": "hax:4/8",
         "status": "available",
-        "layout": "4/8"
+        "layout": "1-2"
       },
       "blox": [
         {
@@ -1121,7 +1116,7 @@ class HAXService {
         "author": "ELMS:LN",
         "icon": "hax:3/3/3/3",
         "status": "available",
-        "layout": "3/3/3/3"
+        "layout": "1-1-1-1"
       },
       "blox": [
         {
@@ -1147,7 +1142,7 @@ class HAXService {
             "type": "image"
           },
           "content": ""
-        }, 
+        },
         {
           "tag": "place-holder",
           "properties": {
@@ -1158,7 +1153,7 @@ class HAXService {
         }
       ]
     }
-    ]';
+  ]';
     return json_decode($jsonstring);
   }
 
