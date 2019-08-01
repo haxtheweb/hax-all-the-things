@@ -47,19 +47,25 @@ class HaxSettings extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $config = $this->config('hax.settings');
-
-    $form['hax_offset_left'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Offset'),
-      '#default_value' => $config->get('hax_offset_left'),
-      '#description' => $this->t("Helps with theme compatibility when positioning the context menu. Adjust this if HAX context menu doesn't correctly align with the side of your content when editing. Value is in pixels but should not include px. Some themes that mess with box-model may or may not have this issue."),
-    ];
     $form['hax_project_location'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('HAX Location'),
+      '#type' => 'select',
+      '#title' => $this->t('Webcomponents Location'),
       '#default_value' => $config->get('hax_project_location'),
+      '#options' => array(
+        'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
+        'https://webcomponents.psu.edu/cdn/' => 'Penn State CDN',
+        'https://cdn.waxam.io/' => 'Waxam CDN',
+        'other' => $this->t('Other'),
+      ),
       '#maxlength' => 1000,
       '#description' => $this->t("Use this to point to CDNs or if you've installed your web components some place else. Start without a slash and end with a slash."),
+    ];
+    $form['hax_project_location_other'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Other Location'),
+      '#default_value' => $config->get('hax_project_location_other'),
+      '#maxlength' => 1000,
+      '#description' => $this->t("Only use this if you need to use a source other than the above supported options."),
     ];
 
     $form['hax_autoload_element_list'] = [

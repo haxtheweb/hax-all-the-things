@@ -44,8 +44,7 @@ function hax_preprocess_field(&$vars) {
     // text format for render.
     // @todo: convert to string replacement function or template.
     $vars['items'][0]['content']['#text'] = '<cms-hax open-default end-point="' . base_path() . 'hax-node-save/' . $node_id . '/' . \Drupal::csrfToken()
-        ->get() . '" body-offset-left="' . \Drupal::config('hax.settings')
-        ->get('hax_offset_left') . '" app-store-connection=' . "'" . $appStoreConnection . "'" . '><template>'
+        ->get() . '" app-store-connection=' . "'" . $appStoreConnection . "'" . '><template>'
      . $vars['items'][0]['content']['#text'] . '</template></cms-hax>';
 
   }
@@ -199,6 +198,10 @@ function _hax_site_connection() {
  */
 function hax_page_bottom(array &$page_bottom) {
   $location = \Drupal::config('hax.settings')->get('hax_project_location');
+  // account for custom locations
+  if ($location == 'other') {
+    $location = \Drupal::config('hax.settings')->get('hax_project_location_other');
+  }
   // append base_path if this site has a url to start it
   if (strpos($location, 'http') === FALSE) {
     $location = base_path() . $location;

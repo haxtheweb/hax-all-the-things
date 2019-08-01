@@ -4,12 +4,12 @@ hax.settings:
   mapping:
     hax_project_location:
       type: string
+    hax_project_location_other:
+      type: string
     hax_autoload_element_node_view:
       type: boolean
     hax_autoload_element_list:
       type: string 
-    hax_offset_left:
-      type: integer
     hax_youtube_key:
       type: string
     hax_memegenerator_key:
