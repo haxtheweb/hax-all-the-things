@@ -51,7 +51,7 @@ function hax_menu() {
     'access arguments' => array('use hax'),
   );
   $items['node/%node/hax'] = array(
-    'title' => 'HAX mode',
+    'title' => 'Block editor mode',
     'description' => 'Edit the node with HAX',
     'page callback' => '_hax_node_form',
     'page arguments' => array(1),
@@ -61,7 +61,7 @@ function hax_menu() {
     'access arguments' => array('update', 1),
   );
     $items['admin/config/content/hax'] = array(
-    'title' => 'HAX',
+    'title' => 'HAX block editor',
     'description' => 'Settings for basic customizations to HAX.',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('hax_settings_form'),
@@ -141,12 +141,6 @@ function hax_hax_autoloader() {
  */
 function hax_settings_form($form, $form_state) {
   $config = config('hax.settings');
-  $form['hax_offset_left'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Offset'),
-    '#default_value' => $config->get('hax_offset_left'),
-    '#description' => "Helps with theme compatibility when positioning the context menu. Adjust this if HAX context menu doesn't correctly align with the side of your content when editing. Value is in pixels but should not include px. Some themes that mess with box-model may or may not have this issue.",
-  );
   // collapse default state
   $form['hax_autoload_element_list'] = array(
     '#type' => 'textfield',
@@ -180,7 +174,6 @@ function hax_settings_form($form, $form_state) {
  */
 function hax_settings_form_submit($form, &$form_state) {
   $config = config('hax.settings');
-  $config->set('hax_offset_left', $form_state['values']['hax_offset_left']);
   $config->set('hax_autoload_element_list', $form_state['values']['hax_autoload_element_list']);
   $hax = new HAXService();
   $baseApps = $hax->baseSupportedApps();
@@ -312,7 +305,7 @@ function _hax_node_form($node) {
   );
   // write content to screen, wrapped in tag to do all the work
   $content = '
-  <cms-hax open-default end-point="' . base_path() . 'hax-node-save/' . $node->nid . '/' . backdrop_get_token('hax') . '" body-offset-left="' . $config->get('hax_offset_left') . '" app-store-connection=' . "'" . json_encode($appStoreConnection) . "'" . '>'
+  <cms-hax redirect-location="' . base_path() . 'node/' . $node->nid . '" open-default end-point="' . base_path() . 'hax-node-save/' . $node->nid . '/' . backdrop_get_token('hax') . '" app-store-connection=' . "'" . json_encode($appStoreConnection) . "'" . '>'
   . '<template>' . 
     check_markup($node->body['und'][0]['value'], $node->body['und'][0]['format'])
   .'</template></cms-hax>';

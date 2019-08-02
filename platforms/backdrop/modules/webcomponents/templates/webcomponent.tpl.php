@@ -10,14 +10,13 @@
  * - $innerHTML: Content that gets placed into the middle of the tag.
  *               This is either set content or a combination of defined slots
  */
-extract($element);
-// just to be safe since drupal_attributes blows up if node system doesn't populate
+// just to be safe since backdrop_attributes blows up if node system doesn't populate
 if (empty($properties)) {
   $properties = array();
 }
 ?>
 <?php print $wrap_tag;?>
-  <<?php print $tag;?><?php print drupal_attributes($properties);?>>
+  <<?php print $tag;?><?php print backdrop_attributes($properties);?>>
     <?php print $innerHTML;?>
   </<?php print $tag; ?>>
 <?php print $wrap_tag_close;?>

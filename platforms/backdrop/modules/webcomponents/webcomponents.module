@@ -13,16 +13,21 @@ function webcomponents_preprocess_page(&$vars) {
   $config = config('webcomponents.settings');
   // generate autoload list
   $location = $config->get('webcomponents_project_location');
+  if ($location == 'other') {
+    $location = $config->get('webcomponents_project_location_other');
+  }
   if (strpos($location, 'http') === FALSE) {
     $location = base_path() . $location;
   }
   // load webcomponentsjs polyfill library if it exists
+  $files = array('build.js');
+  backdrop_alter('webcomponents_build_file_location', $files);
   $wc = new WebComponentsService();
   $element = array(
     '#type' => 'markup',
-    '#markup' => $wc->applyWebcomponents($location),
+    '#markup' => $wc->applyWebcomponents($location, $files),
   );
-  drupal_add_html_head($element, 'webcomponents');
+  $vars['page_bottom'] .= backdrop_render($element);
 }
 
 /**
@@ -46,12 +51,25 @@ function webcomponents_menu() {
 function webcomponents_settings_form($form, $form_state) {
   $config = config('webcomponents.settings');
   $form = array();
-  $form['webcomponents_project_location'] = array(
-    '#type' => 'textfield',
-    '#title' => t('CDN location'),
+  $form['webcomponents_project_location'] = [
+    '#type' => 'select',
+    '#title' => t('Webcomponents Location'),
     '#default_value' => $config->get('webcomponents_project_location'),
-    '#description' => t("Base path needs to start without a slach and end with a slash. This supports CDNs as well."),
-  );
+    '#options' => array(
+      'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
+      'https://webcomponents.psu.edu/cdn/' => 'Penn State CDN',
+      'https://cdn.waxam.io/' => 'Waxam CDN',
+      'other' => t('Other'),
+    ),
+    '#description' => t("Use this to point to CDNs or if you've installed your web components some place else. Start without a slash and end with a slash."),
+  ];
+  $form['webcomponents_project_location_other'] = [
+    '#type' => 'textfield',
+    '#title' => t('Other Location'),
+    '#default_value' => $config->get('webcomponents_project_location_other'),
+    '#maxlength' => 1000,
+    '#description' => t("Only use this if you need to use a source other than the above supported options."),
+  ];
   // Add a submit button
   $form['actions']['#type'] = 'actions';
   $form['actions']['submit'] = array(
@@ -68,6 +86,7 @@ function webcomponents_settings_form($form, $form_state) {
 function webcomponents_settings_form_submit($form, &$form_state) {
   $config = config('webcomponents.settings');
   $config->set('webcomponents_project_location', $form_state['values']['webcomponents_project_location']);
+  $config->set('webcomponents_project_location_other', $form_state['values']['webcomponents_project_location_other']);
   $config->save();
 
   backdrop_set_message(t('The configuration options have been saved.'));

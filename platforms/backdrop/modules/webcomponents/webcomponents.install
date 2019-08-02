@@ -109,4 +109,5 @@ function webcomponents_update_last_removed() {
  */
 function webcomponents_install() {
  _webcomponents_rebuild(TRUE);
+ backdrop_set_message(t('Default is to serve webcomponents over a CDN but if you want to use local copies of the assets or do your own build make sure you copy everything from CopyThisStuff in the webcomponents module directory into sites/all/libraries/webcomponents/ and read the README.md.'), 'status');
 }

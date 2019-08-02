@@ -1,9 +1,13 @@
-name = Web components
+name = Webcomponents
 description = Provides support for webcomponents to ingest static templates into reusable layout systems.
 backdrop = 1.x
 package = Webcomponents
-version = VERSION
 type = module
 dependencies[] = entity
 dependencies[] = libraries
 configure = admin/config/content/webcomponents
+
+; Added by Backdrop CMS packaging script on 2019-08-02
+project = webcomponents
+version = 1.x-3.1.0
+timestamp = 1564765040
