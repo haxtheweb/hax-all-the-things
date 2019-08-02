@@ -4,20 +4,20 @@ define('WP_HAX_AUTOLOAD_ELEMENT_LIST', 'oer-schema lrn-aside grid-plate tab-list
 
 /**
  * @package HAX
- * @version 0.0.1
+ * @version 3.1.0
  */
 /*
 Plugin Name: HAX
-Plugin URI: http://github.com/elmsln/wordpress_hax
+Plugin URI: https://github.com/elmsln/wp-plugin-hax
 Description: An ecosystem agnostic web editor to democratise the web and liberate users of platforms.
 Author: Bryan Ollendyke
-Version: 0.0.1
-Author URI: http://haxtheweb.org/
+Version: 3.1.0
+Author URI: https://haxtheweb.org/
 */
 
 // Wire up HAX to hijack the Classic editor
 function hax_wordpress($hook) {
-  if ($hook == 'post.php') {
+  if ($hook == 'post.php' || $hook == 'post-new.php') {
     wp_enqueue_script( 'hax_the_press', plugins_url('/hax/js/hax-the-press.js') );
   }
 }
@@ -39,7 +39,7 @@ function hax_admin_init() {
  	// settings, put it in our new section
  	add_settings_field(
 		'hax_settings',
-		'HAX',
+		'HAX block editor',
 		'hax_setting_callback_function',
 		'general',
 		'webcomponents_setting_section'

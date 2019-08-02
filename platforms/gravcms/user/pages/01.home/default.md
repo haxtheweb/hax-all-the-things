@@ -1,42 +1,18 @@
 ---
 title: Home
-body_classes: title-center title-h1h2
+body_classes: 'title-center title-h1h2'
 ---
 
-# Say Hello to Grav!
-## installation successful...
+<grid-plate layout="1-1" responsive-size="xl" style="width: 100%;"><h2 slot="col-1">An article about some jerk</h2>
 
-Congratulations! You have installed the **Base Grav Package** that provides a **simple page** and the default **Quark** theme to get you started.
 
-!! If you see a **404 Error** when you click `Typography` in the menu, please refer to the [troubleshooting guide](http://learn.getgrav.org/troubleshooting/page-not-found).
+<p slot="col-1">The hand.. ah yes.. that. So... It's part iron man, part stop. Mostly stop. As in... stop what you're doing the way you've been doing it, web components are the future.</p>
 
-### Find out all about Grav
 
-* Learn about **Grav** by checking out our dedicated [Learn Grav](http://learn.getgrav.org) site.
-* Download **plugins**, **themes**, as well as other Grav **skeleton** packages from the [Grav Downloads](http://getgrav.org/downloads) page.
-* Check out our [Grav Development Blog](http://getgrav.org/blog) to find out the latest goings on in the Grav-verse.
+<self-check style="width: 50%;" title="The future is in space" question="Microgravity" image="https://images-assets.nasa.gov/image/0000485/0000485~thumb.jpg" schema-resource-id="#8dd6cb15-7711-4d5d-721b" accent-color="cyan" resource="#8dd6cb15-7711-4d5d-721b" prefix="oer:http://oerschema.org/ schema:http://schema.org/ dc:http://purl.org/dc/terms/ foaf:http://xmlns.com/foaf/0.1/ cc:http://creativecommons.org/ns# bib:http://bib.schema.org " slot="col-2" alt="">  <span slot="question">Microgravity? lol no, the future is web components dawg!</span>
+  <span>Freal</span>
+</self-check>
 
-!!! If you want a more **full-featured** base install, you should check out [**Skeleton** packages available in the downloads](http://getgrav.org/downloads).
+<meme-maker image-url="https://btopro.com/files/headshot.jpg" top-text="ugh" bottom-text="this guy" slot="col-1" style="width: 50%;"></meme-maker>
 
-### Edit this Page
-
-To edit this page, simply navigate to the folder you installed **Grav** into, and then browse to the `user/pages/01.home` folder and open the `default.md` file in your [editor of choice](http://learn.getgrav.org/basics/requirements).  You will see the content of this page in [Markdown format](http://learn.getgrav.org/content/markdown).
-
-### Create a New Page
-
-Creating a new page is a simple affair in **Grav**.  Simply follow these simple steps:
-
-1. Navigate to your pages folder: `user/pages/` and create a new folder.  In this example, we will use [explicit default ordering](http://learn.getgrav.org/content/content-pages) and call the folder `02.mypage`.
-2. Launch your text editor and paste in the following sample code:
-
-        ---
-        title: My New Page
-        ---
-        # My New Page!
-
-        This is the body of **my new page** and I can easily use _Markdown_ syntax here.
-
-3. Save this file in the `user/pages/02.mypage/` folder as `default.md`. This will tell **Grav** to render the page using the **default** template.
-4. That is it! Reload your browser to see your new page in the menu.
-
-! NOTE: The page will automatically show up in the Menu after the "Home" menu item. If you wish to change the name that shows up in the Menu, simple add: `menu: My Page` between the dashes in the page content. This is called the YAML front matter, and it is where you configure page-specific options.
+</grid-plate>

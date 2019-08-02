@@ -7,7 +7,8 @@ This should give you the dependencies you need to get going.
    local menu item / tab / contextual option show up when they have access to
    edit a node. If you want users to be able to upload files, grant the
    'Upload files via HAX editor' permission.
-3. The default is to serve JS assets up from a CDN. Should you need to change this
+3. The default is to serve JS assets up from a CDN.
+   Should you need to change this keep reading into building your own assets.
 
 NOTE on Text Formats: HAX is designed to work with nodes with bodies in the
 default Full HTML format where "Limit allowed HTML tags and correct faulty HTML"

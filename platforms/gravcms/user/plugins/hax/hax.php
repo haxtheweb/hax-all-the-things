@@ -12,7 +12,6 @@ use Symfony\Component\Yaml\Yaml;
 use Grav\Plugin\AtoolsPlugin;
 use Grav\Plugin\WebcomponentsPlugin;
 
-define('HAX_DEFAULT_OFFSET', 0);
 define('HAX_DEFAULT_ELEMENTS', 'oer-schema lrn-aside grid-plate tab-list magazine-cover video-player image-compare-slider license-element self-check multiple-choice lrn-table hero-banner task-list media-image lrndesign-blockquote meme-maker a11y-gif-player paper-audio-player wikipedia-query lrn-vocab lrn-math person-testimonial citation-element code-editor place-holder stop-note q-r wave-player');
 
 class HAXPlugin extends Plugin {
@@ -36,8 +35,6 @@ class HAXPlugin extends Plugin {
   }
   public function onTwigSiteVariables() {
     if($this->isAdmin() && strpos($this->grav['uri']->route(), $this->config['plugins']['admin']['route'] . '/pages/') !== false) {
-      // this is the admin area
-      $offsetLeft = $this->config->get('plugins.hax.offset_left');
       // discover and autoload our components
       $assets = $this->grav['assets'];
       $assets->addCSS('plugin://hax/hax.css', array('priority' => 103, 'group' => 'head'));
@@ -88,15 +85,7 @@ class HAXPlugin extends Plugin {
 	  );
       $this->grav['twig']->twig_vars['appStoreConnection'] = json_encode($appStoreConnection);
       $this->grav['twig']->twig_vars['haxSlotArea'] = '<template>' . $pagebody . '</template>';
-      $this->grav['twig']->twig_vars['bodyOffsetLeft'] = $offsetLeft;
     }
-  }
-  /**
-   * Return the base url for forming paths on the front end.
-   * @return string  The base path to the user / webcomponents directory
-   */
-  public function getBaseURL() {
-    return $this->grav['base_url'] . '/user/data/webcomponents/';
   }
   /**
    * returns an array of app store definitions based
@@ -1072,7 +1061,7 @@ class HAXPlugin extends Plugin {
         "author": "ELMS:LN",
         "icon": "hax:6/6",
         "status": "available",
-        "layout": "6/6"
+        "layout": "1-1"
       },
       "blox": [
         {
@@ -1105,9 +1094,10 @@ class HAXPlugin extends Plugin {
         "author": "ELMS:LN",
         "icon": "hax:8/4",
         "status": "available",
-        "layout": "8/4"
+        "layout": "2-1"
       },
-      "blox": [{
+      "blox": [
+        {
           "tag": "place-holder",
           "properties": {
             "slot": "col-1",
@@ -1131,7 +1121,7 @@ class HAXPlugin extends Plugin {
         "author": "ELMS:LN",
         "icon": "hax:4/4/4",
         "status": "available",
-        "layout": "4/4/4"
+        "layout": "1-1-1"
       },
       "blox": [
         {
@@ -1166,7 +1156,7 @@ class HAXPlugin extends Plugin {
         "author": "ELMS:LN",
         "icon": "hax:4/8",
         "status": "available",
-        "layout": "4/8"
+        "layout": "1-2"
       },
       "blox": [
         {
@@ -1209,7 +1199,7 @@ class HAXPlugin extends Plugin {
         "author": "ELMS:LN",
         "icon": "hax:3/3/3/3",
         "status": "available",
-        "layout": "3/3/3/3"
+        "layout": "1-1-1-1"
       },
       "blox": [
         {
@@ -1235,7 +1225,7 @@ class HAXPlugin extends Plugin {
             "type": "image"
           },
           "content": ""
-        }, 
+        },
         {
           "tag": "place-holder",
           "properties": {
@@ -1246,7 +1236,7 @@ class HAXPlugin extends Plugin {
         }
       ]
     }
-    ]';
+  ]';
     return json_decode($jsonstring);
   }
 

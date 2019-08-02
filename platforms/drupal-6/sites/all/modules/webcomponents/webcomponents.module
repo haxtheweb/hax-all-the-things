@@ -101,12 +101,25 @@ function webcomponents_menu() {
  */
 function webcomponents_admin_settings() {
   $form = array();
-  $form['webcomponents_project_location'] = array(
+  $form['webcomponents_project_location'] = [
+    '#type' => 'select',
+    '#title' => t('Webcomponents Location'),
+    '#default_value' => variable_get('webcomponents_project_location', 'https://webcomponents.psu.edu/cdn/'),
+    '#options' => array(
+      'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
+      'https://webcomponents.psu.edu/cdn/' => 'Penn State CDN',
+      'https://cdn.waxam.io/' => 'Waxam CDN',
+      'other' => t('Other'),
+    ),
+    '#description' => t("Use this to point to CDNs or if you've installed your web components some place else. Start without a slash and end with a slash."),
+  ];
+  $form['webcomponents_project_location_other'] = [
     '#type' => 'textfield',
-    '#title' => t('CDN location'),
-    '#default_value' => variable_get('webcomponents_project_location', 'sites/all/libraries/webcomponents/'),
-    '#description' => t("Base path needs to start without a slach and end with a slash. This supports CDNs as well."),
-  );
+    '#title' => t('Other Location'),
+    '#default_value' => variable_get('webcomponents_project_location_other', ''),
+    '#maxlength' => 1000,
+    '#description' => t("Only use this if you need to use a source other than the above supported options."),
+  ];
   return system_settings_form($form);
 }
 
@@ -114,16 +127,21 @@ function webcomponents_admin_settings() {
  * Implements hook_init().
  */
 function webcomponents_init() {
-  $location = variable_get('webcomponents_project_location', 'sites/all/libraries/webcomponents/');
+  $location = variable_get('webcomponents_project_location', 'https://webcomponents.psu.edu/cdn/');
+  if ($location == 'other') {
+    $location = variable_get('webcomponents_project_location_other', '');
+  }
   // append base_path if this site has a url to start it
   if (strpos($location, 'http') === FALSE) {
     $location = base_path() . $location;
   }
   // load webcomponentsjs polyfill library if it exists
+  $files = array('build.js');
+  drupal_alter('webcomponents_build_file_location', $files);
   $wc = new WebComponentsService();
   $element = array(
     '#type' => 'markup',
-    '#markup' => $wc->applyWebcomponents($location),
+    '#markup' => $wc->applyWebcomponents($location, $files),
   );
   drupal_add_html_head($element, 'webcomponents');
 }
@@ -176,7 +194,7 @@ function _webcomponents_render_component($component) {
       $vars['properties']['class'] .= ' ' . WEBCOMPONENTS_CLASS_IDENTIFIER;
     }
     // allow other projects to add onto and modify the webcomponent before it renders
-    // useful for tag wrapping for systems like HAX
+    // useful for tag wrapping for systems
     drupal_alter('webcomponent_render', $vars, $component);
     $output = theme('webcomponent', $vars);
     return $output;

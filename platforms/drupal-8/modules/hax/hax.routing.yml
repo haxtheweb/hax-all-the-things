@@ -30,7 +30,7 @@ hax.node_form:
 hax.settings:
   path: /admin/config/content/hax
   defaults:
-    _title: HAX
+    _title: HAX block editor
     _form: \Drupal\hax\Form\HaxSettings
   requirements:
     _permission: 'administer site configuration'

@@ -33,7 +33,7 @@ function hax_menu() {
     'access arguments' => array('use hax'),
   );
   $items['node/%node/hax'] = array(
-    'title' => 'HAX mode',
+    'title' => 'Block editor mode',
     'description' => 'Edit the node with HAX',
     'page callback' => '_hax_node_form',
     'page arguments' => array(1),
@@ -43,7 +43,7 @@ function hax_menu() {
     'access arguments' => array('update', 1),
   );
   $items['admin/settings/hax'] = array(
-    'title' => 'HAX',
+    'title' => 'HAX block editor',
     'description' => 'Settings for basic customizations to HAX.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('hax_admin_settings'),
@@ -58,12 +58,6 @@ function hax_menu() {
  */
 function hax_admin_settings() {
   $form = array();
-  $form['hax_offset_left'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Offset'),
-    '#default_value' => variable_get('hax_offset_left', 0),
-    '#description' => "Helps with theme compatibility when positioning the context menu. Adjust this if HAX context menu doesn't correctly align with the side of your content when editing. Value is in pixels but should not include px. Some themes that mess with box-model may or may not have this issue.",
-  );
   // collapse default state
   $form['hax_autoload_element_list'] = array(
     '#type' => 'textfield',
@@ -162,7 +156,7 @@ function _hax_node_form($node) {
   );
   // write content to screen, wrapped in tag to do all the work
   $content = '
-  <cms-hax open-default end-point="' . base_path() . 'hax-node-save/' . $node->nid . '/' . drupal_get_token('hax') . '" body-offset-left="' . variable_get('hax_offset_left', 0) . '" app-store-connection=' . "'" . json_encode($appStoreConnection) . "'" . '>
+  <cms-hax redirect-location="' . base_path() . 'node/' . $node->nid . '" open-default end-point="' . base_path() . 'hax-node-save/' . $node->nid . '/' . drupal_get_token('hax') . '" app-store-connection=' . "'" . json_encode($appStoreConnection) . "'" . '>
     <template>' . 
     check_markup($node->body, $node->format) . 
     '</template>

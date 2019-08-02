@@ -14,7 +14,7 @@ define('HAX_DEFAULT_ELEMENTS', 'oer-schema lrn-aside grid-plate tab-list magazin
 function hax_permission() {
   return array(
     'use hax' =>  array(
-      'title' => t('Use HAX editor'),
+      'title' => t('Use HAX block editor'),
       'description' => t('Advanced authoring experience that is pulled in from hax capable web components.'),
     ),
   );
@@ -46,7 +46,7 @@ function hax_menu() {
     'access arguments' => array('use hax'),
   );
   $items['node/%node/hax'] = array(
-    'title' => 'HAX mode',
+    'title' => 'Block editor mode',
     'description' => 'Edit the node with HAX',
     'page callback' => '_hax_node_form',
     'page arguments' => array(1),
@@ -56,7 +56,7 @@ function hax_menu() {
     'access arguments' => array('update', 1),
   );
   $items['admin/config/content/hax'] = array(
-    'title' => 'HAX',
+    'title' => 'HAX block editor',
     'description' => 'Settings for basic customizations to HAX.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('hax_settings'),
