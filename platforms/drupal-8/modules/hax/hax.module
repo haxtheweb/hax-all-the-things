@@ -25,7 +25,7 @@ function hax_preprocess_field(&$vars) {
 
   $entity_type = $vars['element']['#object']->getEntityTypeId();
   $view_mode = $vars['element']['#view_mode'];
-
+  // @todo we could do this to other things too but this is the piece that forces it to body only
   if ($vars['field_name'] == 'body' && $entity_type == 'node' && $view_mode == 'full'
     && \Drupal::config('hax.settings')->get('hax_autoload_element_node_view')) {
 
@@ -38,12 +38,14 @@ function hax_preprocess_field(&$vars) {
     $current_path = $request->getPathInfo();
     $path_args = explode('/', $current_path);
     $node_id = $path_args[2];
+    // @todo this is clunky but works
+    $redirect = str_replace('//', '/', base_path() . str_replace('/hax', '', $current_path));
 
     // TODO Not ideal, but we've fallen back to using the body text instead of
     // prefix/suffix due to filtering. This will go through the node's selected
     // text format for render.
     // @todo: convert to string replacement function or template.
-    $vars['items'][0]['content']['#text'] = '<cms-hax open-default end-point="' . base_path() . 'hax-node-save/' . $node_id . '/' . \Drupal::csrfToken()
+    $vars['items'][0]['content']['#text'] = '<cms-hax redirect-location="' . $redirect . '" open-default end-point="' . base_path() . 'hax-node-save/' . $node_id . '/' . \Drupal::csrfToken()
         ->get() . '" app-store-connection=' . "'" . $appStoreConnection . "'" . '><template>'
      . $vars['items'][0]['content']['#text'] . '</template></cms-hax>';
 
