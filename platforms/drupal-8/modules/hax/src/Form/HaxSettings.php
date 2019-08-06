@@ -66,16 +66,45 @@ class HaxSettings extends ConfigFormBase {
       '#maxlength' => 1000,
       '#description' => $this->t("Only use this if you need to use a source other than the above supported options."),
     ];
-
     $form['hax_autoload_element_list'] = [
-      '#type' => 'textfield',
+      '#type' => 'textarea',
       '#title' => $this->t('Elements to autoload'),
       '#default_value' => $config->get('hax_autoload_element_list'),
-      '#maxlength' => 1000,
       '#description' => $this->t("This allows for auto-loading elements known to play nice with HAX. If you've written any webcomponents that won't automatically be loaded into the page via that module this allows you to attempt to auto-load them when HAX loads. For example, if you have a video-player element in your bower_components directory and want it to load on this interface, this would be a simple way to do that. Spaces only between elements, no comma"),
     ];
-
+    // @todo need to get that JSON editor in here or VS code cause otherwise this is impossible to work with
     $hax = new HaxService();
+    $apps = $config->get('hax_apps');
+    if (!$apps || $apps == '') {
+      $apps = json_encode($hax->loadBaseAppStore());
+    }
+    $form['hax_apps'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Apps schema'),
+      '#default_value' => $apps,
+      '#description' => $this->t("customize the integrationsw ith other applications / places storing media"),
+    ];
+    $blox = $config->get('hax_blox');
+    if (!$blox || $blox == '') {
+      $blox = json_encode($hax->loadBaseBlox());
+    }
+    $form['hax_blox'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Blox schema'),
+      '#default_value' => $blox,
+      '#description' => $this->t("This occupies the "),
+    ];
+    $stax = $config->get('hax_stax');
+    if (!$stax || $stax == '') {
+      $stax = json_encode($hax->loadBaseStax());
+    }
+    $form['hax_stax'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Stax schema'),
+      '#default_value' => $stax,
+      '#description' => $this->t("This occupies the "),
+    ];
+    // plug in all the other API keys for common, complex integrations
     $baseApps = $hax->baseSupportedApps();
     foreach ($baseApps as $key => $app) {
       $form['hax_' . $key . '_key'] = [
