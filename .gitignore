@@ -3,3 +3,4 @@ platforms/gravcms/logs
 platforms/gravcms/user
 platforms/drupal-8/sites/default
 platforms/wordpress/wp-content/uploads
+platforms/classicpress/wp-content/uploads
