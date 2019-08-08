@@ -22,10 +22,10 @@ define('DB_HOST', 'db');
 define('WP_DEBUG', true);
 
 /** WP_HOME URL */
-define('WP_HOME', 'http://ClassicPress-release-1.0.1.ddev.local');
+define('WP_HOME', 'https://hax-all-the-things.ddev.local/classicpress');
 
 /** WP_SITEURL location */
 define('WP_SITEURL', WP_HOME . '/');
 
 /** Define the database table prefix */
-$table_prefix  = 'wp_';
+$table_prefix  = 'cp_';
