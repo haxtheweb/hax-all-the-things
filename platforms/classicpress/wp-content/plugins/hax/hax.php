@@ -18,7 +18,7 @@ Author URI: https://haxtheweb.org/
 // Wire up HAX to hijack the Classic editor
 function hax_wordpress($hook) {
   if ($hook == 'post.php' || $hook == 'post-new.php') {
-    wp_enqueue_script( 'hax_the_press', plugins_url('/hax/js/hax-the-press.js') );
+    wp_enqueue_script( 'hax_the_press', plugins_url('js/hax-the-press.js', __FILE__), array(), false, true );
   }
 }
 add_action( 'admin_enqueue_scripts', 'hax_wordpress' );
