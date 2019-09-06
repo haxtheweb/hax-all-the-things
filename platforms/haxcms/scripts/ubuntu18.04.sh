@@ -38,6 +38,12 @@ sudo a2enmod mpm_event
 sudo a2enmod http2
 # enable protocol support
 echo "Protocols h2 http/1.1" > /etc/apache2/conf-available/http2.conf
+echo "<Directory /var/www>" > /etc/apache2/conf-available/allowoverrides.conf
+echo "	Options Indexes FollowSymLinks" >> /etc/apache2/conf-available/allowoverrides.conf
+echo "	AllowOverride All" >> /etc/apache2/conf-available/allowoverrides.conf
+echo "	Require all granted" >> /etc/apache2/conf-available/allowoverrides.conf
+echo "</Directory>" >> /etc/apache2/conf-available/allowoverrides.conf
 sudo a2enconf http2
+sudo a2enconf allowoverrides
 # get this party started
 sudo service apache2 restart
