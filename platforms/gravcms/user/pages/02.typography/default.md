@@ -2,154 +2,224 @@
 title: Typography
 ---
 
-! Details on the full capabilities of Spectre.css can be found in the [Official Spectre Documentation](https://picturepan2.github.io/spectre/elements.html)
+<div class="notices yellow">
+<p>Details on the full capabilities of Spectre.css can be found in the <a href="https://picturepan2.github.io/spectre/elements.html">Official Spectre Documentation</a>
+</p>
 
-The [Quark theme](https://github.com/getgrav/grav-theme-quark) is the new default theme for Grav built with [Spectre.css](https://picturepan2.github.io/spectre/) the lightweight, responsive and modern CSS framework. Spectre provides  basic styles for typography, elements, and a responsive layout system that utilizes best practices and consistent language design.
-
-### Headings
-
-# H1 Heading `40px`
-
-## H2 Heading `32px`
-
-### H3 Heading `28px`
-
-#### H4 Heading `24px`
-
-##### H5 Heading `20px`
-
-###### H6 Heading `16px`
-
-```html
-# H1 Heading
+</div>
+<p>The <a href="https://github.com/getgrav/grav-theme-quark">Quark theme</a>
+ is the new default theme for Grav built with <a href="https://picturepan2.github.io/spectre/">Spectre.css</a>
+ the lightweight, responsive and modern CSS framework. Spectre provides  basic styles for typography, elements, and a responsive layout system that utilizes best practices and consistent language design.</p>
+<img src="https://images-assets.nasa.gov/image/0000559/0000559~thumb.jpg"/><h3>Headings</h3>
+<h2>H2 Heading <code>32px</code>
+</h2>
+<h3>H3 Heading <code>28px</code>
+</h3>
+<h4>H4 Heading <code>24px</code>
+</h4>
+<h5>H5 Heading <code>20px</code>
+</h5>
+<h6>H6 Heading <code>16px</code>
+</h6>
+<pre><code class="language-html"># H1 Heading
 # H1 Heading `40px`</small>`
 
-<span class="h1">H1 Heading</span>
-```
+<span class="h1">H1 Heading</span></code>
+</pre>
+<h3>Paragraphs</h3>
+<p>Lorem ipsum dolor sit amet, consectetur <a href="/gravcms/typography">adipiscing elit. Praesent risus leo, dictum in vehicula sit amet</a>
+, feugiat tempus tellus. Duis quis sodales risus. Etiam euismod ornare consequat.</p>
+<p>Climb leg rub face on everything give attitude nap all day for under the bed. Chase mice attack feet but rub face on everything hopped up on goofballs.</p>
+<h3>Markdown Semantic Text Elements</h3>
+<p><strong>Bold</strong>
+ <code>**Bold**</code>
+</p>
+<p><em>Italic</em>
+ <code>_Italic_</code>
+</p>
+<p><del>Deleted</del>
+ <code>~~Deleted~~</code>
+</p>
+<p><code>Inline Code</code>
+ <code>`Inline Code`</code>
+</p>
+<h3>HTML Semantic Text Elements</h3>
+<p><abbr>I18N</abbr>
+ <code><abbr></code>
+</p>
+<p><cite>Citation</cite>
+ <code><cite></code>
+</p>
+<p><kbd>Ctrl + S</kbd>
+ <code><kbd></code>
+</p>
+<p>Text<sup>Superscripted</sup>
+ <code><sup></code>
+</p>
+<p>Text<sub>Subscripted</sub>
+ <code><sub></code>
+</p>
+<p><u>Underlined</u>
+ <code><u></code>
+</p>
+<p><mark>Highlighted</mark>
+ <code><mark></code>
+</p>
+<p><time>20:14</time>
+ <code><time></code>
+</p>
+<p><var>x = y + 2</var>
+ <code><var></code>
+</p>
+<h3>Blockquote</h3>
+<blockquote>
+<p>The advance of technology is based on making it fit in so that you don't really even notice it,
+so it's part of everyday life.</p>
 
-### Paragraphs
+<p><cite>- Bill Gates</cite>
+</p>
 
-Lorem ipsum dolor sit amet, consectetur [adipiscing elit. Praesent risus leo, dictum in vehicula sit amet](#), feugiat tempus tellus. Duis quis sodales risus. Etiam euismod ornare consequat.
-
-Climb leg rub face on everything give attitude nap all day for under the bed. Chase mice attack feet but rub face on everything hopped up on goofballs.
-
-### Markdown Semantic Text Elements
-
-**Bold** `**Bold**`
-
-_Italic_ `_Italic_`
-
-~~Deleted~~ `~~Deleted~~`
-
-`Inline Code` `` `Inline Code` ``
-
-### HTML Semantic Text Elements
-
-<abbr>I18N</abbr> `<abbr>`
-
-<cite>Citation</cite> `<cite>`
-
-<kbd>Ctrl + S</kbd> `<kbd>`
-
-Text<sup>Superscripted</sup> `<sup>`
-
-Text<sub>Subscripted</sub> `<sub>`
-
-<u>Underlined</u> `<u>`
-
-<mark>Highlighted</mark> `<mark>`
-
-<time>20:14</time> `<time>`
-
-<var>x = y + 2</var> `<var>`
-
-### Blockquote
-
-> The advance of technology is based on making it fit in so that you don't really even notice it,
+</blockquote>
+<pre><code class="language-markdown">> The advance of technology is based on making it fit in so that you don't really even notice it,
 > so it's part of everyday life.
 >
-> <cite>- Bill Gates</cite>
+> <cite>- Bill Gates</cite></code>
+</pre>
+<h3>Unordered List</h3>
+<ul>
+<li>list item 1</li>
 
-```markdown
-> The advance of technology is based on making it fit in so that you don't really even notice it,
-> so it's part of everyday life.
->
-> <cite>- Bill Gates</cite>
-```
+<li>list item 2
+<ul>
+<li>list item 2.1</li>
 
-### Unordered List
+<li>list item 2.2</li>
 
-* list item 1
+<li>list item 2.3</li>
+
+</ul>
+</li>
+
+<li>list item 3</li>
+
+</ul>
+<pre><code class="language-markdown">* list item 1
 * list item 2
     * list item 2.1
     * list item 2.2
     * list item 2.3
-* list item 3
+* list item 3</code>
+</pre>
+<h3>Ordered List</h3>
+<ol>
+<li>list item 1</li>
 
-```markdown
-* list item 1
-* list item 2
-    * list item 2.1
-    * list item 2.2
-    * list item 2.3
-* list item 3
-```
+<li>list item 2
+<ol>
+<li>list item 2.1</li>
 
-### Ordered List
+<li>list item 2.2</li>
 
-1. list item 1
+<li>list item 2.3</li>
+
+</ol>
+</li>
+
+<li>list item 3</li>
+
+</ol>
+<pre><code class="language-markdown">1. list item 1
 1. list item 2
     1. list item 2.1
     1. list item 2.2
     1. list item 2.3
-1. list item 3
+1. list item 3</code>
+</pre>
+<h3>Table</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Name</th>
 
-```markdown
-1. list item 1
-1. list item 2
-    1. list item 2.1
-    1. list item 2.2
-    1. list item 2.3
-1. list item 3
-```
+<th style="text-align: center;">Genre</th>
 
-### Table
+<th style="text-align: right;">Release date</th>
 
-| Name                        | Genre                         | Release date         |
+</tr>
+
+</thead>
+
+<tbody>
+<tr>
+<td style="text-align: left;">The Shawshank Redemption</td>
+
+<td style="text-align: center;">Crime, Drama</td>
+
+<td style="text-align: right;">14 October 1994</td>
+
+</tr>
+
+<tr>
+<td style="text-align: left;">The Godfather</td>
+
+<td style="text-align: center;">Crime, Drama</td>
+
+<td style="text-align: right;">24 March 1972</td>
+
+</tr>
+
+<tr>
+<td style="text-align: left;">Schindler's List</td>
+
+<td style="text-align: center;">Biography, Drama, History</td>
+
+<td style="text-align: right;">4 February 1994</td>
+
+</tr>
+
+<tr>
+<td style="text-align: left;">Se7en</td>
+
+<td style="text-align: center;">Crime, Drama, Mystery</td>
+
+<td style="text-align: right;">22 September 1995</td>
+
+</tr>
+
+</tbody>
+
+</table>
+<pre><code class="language-markdown">| Name                        | Genre                         | Release date         |
 | :-------------------------- | :---------------------------: | -------------------: |
 | The Shawshank Redemption    | Crime, Drama                  | 14 October 1994      |
 | The Godfather               | Crime, Drama                  | 24 March 1972        |
 | Schindler's List            | Biography, Drama, History     | 4 February 1994      |
-| Se7en                       | Crime, Drama, Mystery         | 22 September 1995    |
+| Se7en                       | Crime, Drama, Mystery         | 22 September 1995    |</code>
+</pre>
+<h3>Notices</h3>
+<p>The notices styles are actually provided by the <code>markdown-notices</code>
+ plugin but are useful enough to include here:</p>
+<div class="notices yellow">
+<p>This is a warning notification</p>
 
-```markdown
-| Name                        | Genre                         | Release date         |
-| :-------------------------- | :---------------------------: | -------------------: |
-| The Shawshank Redemption    | Crime, Drama                  | 14 October 1994      |
-| The Godfather               | Crime, Drama                  | 24 March 1972        |
-| Schindler's List            | Biography, Drama, History     | 4 February 1994      |
-| Se7en                       | Crime, Drama, Mystery         | 22 September 1995    |
-```
+</div>
+<div class="notices red">
+<p>This is a error notification</p>
 
-### Notices
+</div>
+<div class="notices blue">
+<p>This is a default notification</p>
 
-The notices styles are actually provided by the `markdown-notices` plugin but are useful enough to include here:
+</div>
+<div class="notices green">
+<p>This is a success notification</p>
 
-! This is a warning notification
+</div>
+<pre><code class="language-markdown">! This is a warning notification
 
 !! This is a error notification
 
 !!! This is a default notification
 
-!!!! This is a success notification
-
-```markdown
-! This is a warning notification
-
-!! This is a error notification
-
-!!! This is a default notification
-
-!!!! This is a success notification
-```
-
+!!!! This is a success notification</code>
+</pre>
