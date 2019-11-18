@@ -1,5 +1,5 @@
 hax.settings:
   route_name: hax.settings
   title: HAX
-  description: 'Settings for basic customizations to HAX.'
+  description: 'Customize the HAX block editor.'
   parent: system.admin_config_content

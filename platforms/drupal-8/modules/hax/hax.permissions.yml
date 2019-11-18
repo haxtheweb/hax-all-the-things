@@ -1,6 +1,6 @@
 'use hax':
-  title: 'Use HAX editor'
-  description: 'Advanced authoring experience that is pulled in from hax capable web components.'
+  title: 'Use HAX block editor'
+  description: 'Allow users to edit using the HAX web component based block editor.'
 'upload files via hax':
-  title: 'Upload files via HAX editor'
-  description: 'Allow HAX users to upload files'
+  title: 'Upload files via HAX block editor'
+  description: 'Grant users with access to HAX the ability to upload files'

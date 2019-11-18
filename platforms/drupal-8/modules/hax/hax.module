@@ -59,7 +59,6 @@ function hax_preprocess_field(&$vars) {
 function hax_hax_app_store() {
 
   $config = \Drupal::config('hax.settings');
-
   $hax = new HaxService();
   $apikeys = [];
   $baseApps = $hax->baseSupportedApps();
@@ -83,8 +82,14 @@ function hax_hax_app_store() {
  * Implements hook_hax_blox().
  */
 function hax_hax_blox() {
-  $hax = new HAXService();
-  $blox = $hax->loadBaseBlox();
+  $config = \Drupal::config('hax.settings');
+  $blox = $config->get('hax_blox');
+  // account for no setting so we at least have SOMETHING
+  // for those initially using the editor
+  if (!$blox || $blox == '') {
+    $hax = new HAXService();
+    $blox = $hax->loadBaseBlox();
+  }
   return $blox;
 }
 
@@ -92,8 +97,14 @@ function hax_hax_blox() {
  * Implements hook_hax_stax().
  */
 function hax_hax_stax() {
-  $hax = new HAXService();
-  $stax = $hax->loadBaseStax();
+  $config = \Drupal::config('hax.settings');
+  $stax = $config->get('hax_stax');
+  // account for no setting so we at least have SOMETHING
+  // for those initially using the editor
+  if (!$stax || $stax == '') {
+    $hax = new HAXService();
+    $stax = $hax->loadBaseStax();
+  }
   return $stax;
 }
 

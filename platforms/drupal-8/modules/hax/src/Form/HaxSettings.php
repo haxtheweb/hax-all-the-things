@@ -28,9 +28,19 @@ class HaxSettings extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('hax.settings');
-
+    $hax = new HaxService();
     foreach (Element::children($form) as $variable) {
-      $config->set($variable, $form_state->getValue($form[$variable]['#parents']));
+      $value = $form_state->getValue($form[$variable]['#parents']);
+      if ($variable == 'hax_blox' || $variable == 'hax_stax') {
+        // test the JSON vaiability of this, if not then just leave blank
+        if ($value === '') {
+          $value = json_encode($hax->loadBaseStax());
+        }
+        else if (json_decode($value) === NULL) {
+          $value = '[]';
+        }
+      }
+      $config->set($variable, $value);
     }
     $config->save();
 
@@ -74,16 +84,6 @@ class HaxSettings extends ConfigFormBase {
     ];
     // @todo need to get that JSON editor in here or VS code cause otherwise this is impossible to work with
     $hax = new HaxService();
-    $apps = $config->get('hax_apps');
-    if (!$apps || $apps == '') {
-      $apps = json_encode($hax->loadBaseAppStore());
-    }
-    $form['hax_apps'] = [
-      '#type' => 'textarea',
-      '#title' => $this->t('Apps schema'),
-      '#default_value' => $apps,
-      '#description' => $this->t("customize the integrationsw ith other applications / places storing media"),
-    ];
     $blox = $config->get('hax_blox');
     if (!$blox || $blox == '') {
       $blox = json_encode($hax->loadBaseBlox());

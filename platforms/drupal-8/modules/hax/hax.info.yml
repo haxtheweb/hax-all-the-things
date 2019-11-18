@@ -1,4 +1,4 @@
 name: HAX
-description: 'A completely Headless Authoring eXperience, #haxtheweb.'
+description: 'The Headless Authoring eXperience, #haxtheweb, a web component driven block editor.'
 core: 8.x
 type: module

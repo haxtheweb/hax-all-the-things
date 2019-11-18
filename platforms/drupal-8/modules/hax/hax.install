@@ -9,5 +9,5 @@
  * Implements hook_install().
  */
 function hax_install() {
-  \Drupal::messenger()->addStatus(t('Default is to serve HAX / webcomponents over a CDN but if you want to use local copies of the assets or do your own build make sure you copy everything from CopyThisStuff in the hax module directory into sites/all/libraries/webcomponents/ and read the README.md.'));
+  \Drupal::messenger()->addStatus(t('To use HAX, make sure you have an input filter enabled on text areas that can process the custom elements HAX produces. The default is to serve web components over a CDN but if you want to do your own build and serve with the site make sure you copy everything from CopyThisStuff in the hax module directory into sites/all/libraries/webcomponents/ and read the README.md.'));
 }
