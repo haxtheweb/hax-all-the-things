@@ -655,9 +655,7 @@
       // the complete response.
       this.ajaxing = false;
       window.alert(
-        `An error occurred while attempting to process ${this.options.url}: ${
-          e.message
-        }`,
+        `An error occurred while attempting to process ${this.options.url}: ${e.message}`,
       );
       // For consistency, return a rejected Deferred (i.e., jqXHR's superclass)
       // so that calling code can take appropriate action.
@@ -750,9 +748,7 @@
       // the complete response.
       ajax.ajaxing = false;
       window.alert(
-        `An error occurred while attempting to process ${ajax.options.url}: ${
-          e.message
-        }`,
+        `An error occurred while attempting to process ${ajax.options.url}: ${e.message}`,
       );
     }
   };
@@ -774,7 +770,7 @@
     // when there is a form such that this.$form.ajaxSubmit() is used instead of
     // $.ajax(). When there is no form and $.ajax() is used, beforeSerialize()
     // isn't called, but don't rely on that: explicitly check this.$form.
-    if (this.$form && document.contains(this.$form.get(0))) {
+    if (this.$form && document.body.contains(this.$form.get(0))) {
       const settings = this.settings || drupalSettings;
       Drupal.detachBehaviors(this.$form.get(0), settings, 'serialize');
     }
@@ -908,6 +904,17 @@
     `<div class="message">${message}</div>`;
 
   /**
+   * Provide a wrapper for the AJAX progress bar element.
+   *
+   * @param {jQuery} $element
+   *   Progress bar element.
+   * @return {string}
+   *   The HTML markup for the progress bar.
+   */
+  Drupal.theme.ajaxProgressBar = $element =>
+    $('<div class="ajax-progress ajax-progress-bar"></div>').append($element);
+
+  /**
    * Sets the progress bar progress indicator.
    */
   Drupal.Ajax.prototype.setProgressIndicatorBar = function() {
@@ -926,8 +933,8 @@
         this.progress.interval || 1500,
       );
     }
-    this.progress.element = $(progressBar.element).addClass(
-      'ajax-progress ajax-progress-bar',
+    this.progress.element = $(
+      Drupal.theme('ajaxProgressBar', progressBar.element),
     );
     this.progress.object = progressBar;
     $(this.element).after(this.progress.element);
@@ -948,7 +955,7 @@
    */
   Drupal.Ajax.prototype.setProgressIndicatorFullscreen = function() {
     this.progress.element = $(Drupal.theme('ajaxProgressIndicatorFullscreen'));
-    $('body').after(this.progress.element);
+    $('body').append(this.progress.element);
   };
 
   /**
@@ -1020,7 +1027,7 @@
     // attachBehaviors() called on the new content from processing the response
     // commands is not sufficient, because behaviors from the entire form need
     // to be reattached.
-    if (this.$form && document.contains(this.$form.get(0))) {
+    if (this.$form && document.body.contains(this.$form.get(0))) {
       const settings = this.settings || drupalSettings;
       Drupal.attachBehaviors(this.$form.get(0), settings);
     }
@@ -1090,7 +1097,7 @@
     $(this.element).prop('disabled', false);
     // Reattach behaviors, if they were detached in beforeSerialize(), and the
     // form is still part of the document.
-    if (this.$form && document.contains(this.$form.get(0))) {
+    if (this.$form && document.body.contains(this.$form.get(0))) {
       const settings = this.settings || drupalSettings;
       Drupal.attachBehaviors(this.$form.get(0), settings);
     }
@@ -1337,6 +1344,26 @@
     },
 
     /**
+     * Command to provide triggers audio UAs to read the supplied text.
+     *
+     * @param {Drupal.Ajax} [ajax]
+     *   {@link Drupal.Ajax} object created by {@link Drupal.ajax}.
+     * @param {object} response
+     *   The JSON response from the Ajax request.
+     * @param {string} [response.text]
+     *   The text that will be read.
+     * @param {string} [response.priority]
+     *   An optional priority that will be used for the announcement.
+     */
+    announce(ajax, response) {
+      if (response.priority) {
+        Drupal.announce(response.text, response.priority);
+      } else {
+        Drupal.announce(response.text);
+      }
+    },
+
+    /**
      * Command to set the window.location, redirecting the browser.
      *
      * @param {Drupal.Ajax} [ajax]
@@ -1534,6 +1561,32 @@
           document.styleSheets[0].addImport(match[1]);
         } while (match);
       }
+    },
+
+    /**
+     * Command to add a message to the message area.
+     *
+     * @param {Drupal.Ajax} [ajax]
+     *   {@link Drupal.Ajax} object created by {@link Drupal.ajax}.
+     * @param {object} response
+     *   The response from the Ajax request.
+     * @param {string} response.messageWrapperQuerySelector
+     *   The zone where to add the message. If null, the default will be used.
+     * @param {string} response.message
+     *   The message text.
+     * @param {string} response.messageOptions
+     *   The options argument for Drupal.Message().add().
+     * @param {bool} response.clearPrevious
+     *   If true, clear previous messages.
+     */
+    message(ajax, response) {
+      const messages = new Drupal.Message(
+        document.querySelector(response.messageWrapperQuerySelector),
+      );
+      if (response.clearPrevious) {
+        messages.clear();
+      }
+      messages.add(response.message, response.messageOptions);
     },
   };
 })(jQuery, window, Drupal, drupalSettings);

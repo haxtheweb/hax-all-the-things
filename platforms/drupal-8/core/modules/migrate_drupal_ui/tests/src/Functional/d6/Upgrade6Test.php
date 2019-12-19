@@ -12,6 +12,8 @@ use Drupal\user\Entity\User;
  * The test method is provided by the MigrateUpgradeTestBase class.
  *
  * @group migrate_drupal_ui
+ *
+ * @group legacy
  */
 class Upgrade6Test extends MigrateUpgradeExecuteTestBase {
 
@@ -57,7 +59,7 @@ class Upgrade6Test extends MigrateUpgradeExecuteTestBase {
     return [
       'aggregator_item' => 1,
       'aggregator_feed' => 2,
-      'block' => 35,
+      'block' => 34,
       'block_content' => 2,
       'block_content_type' => 1,
       'comment' => 8,
@@ -65,15 +67,15 @@ class Upgrade6Test extends MigrateUpgradeExecuteTestBase {
       // migration creates 12 comment types, one per node type.
       'comment_type' => 13,
       'contact_form' => 5,
+      'contact_message' => 0,
       'configurable_language' => 5,
       'editor' => 2,
-      'field_config' => 91,
-      'field_storage_config' => 65,
+      'field_config' => 95,
+      'field_storage_config' => 66,
       'file' => 7,
       'filter_format' => 7,
       'image_style' => 5,
-      'language_content_settings' => 10,
-      'migration' => 105,
+      'language_content_settings' => 15,
       'node' => 18,
       // The 'book' module provides the 'book' node type, and the migration
       // creates 12 node types.
@@ -82,8 +84,9 @@ class Upgrade6Test extends MigrateUpgradeExecuteTestBase {
       'search_page' => 2,
       'shortcut' => 2,
       'shortcut_set' => 1,
-      'action' => 23,
+      'action' => 25,
       'menu' => 8,
+      'path_alias' => 8,
       'taxonomy_term' => 15,
       'taxonomy_vocabulary' => 7,
       'tour' => 5,
@@ -94,7 +97,7 @@ class Upgrade6Test extends MigrateUpgradeExecuteTestBase {
       'date_format' => 11,
       'entity_form_display' => 29,
       'entity_form_mode' => 1,
-      'entity_view_display' => 55,
+      'entity_view_display' => 58,
       'entity_view_mode' => 14,
       'base_field_override' => 38,
     ];
@@ -107,7 +110,7 @@ class Upgrade6Test extends MigrateUpgradeExecuteTestBase {
     $counts = $this->getEntityCounts();
     $counts['block_content'] = 3;
     $counts['comment'] = 9;
-    $counts['entity_view_display'] = 55;
+    $counts['entity_view_display'] = 58;
     $counts['entity_view_mode'] = 14;
     $counts['file'] = 8;
     $counts['menu_link_content'] = 11;
@@ -130,40 +133,32 @@ class Upgrade6Test extends MigrateUpgradeExecuteTestBase {
       'contact',
       'content',
       'date',
-      'dblog',
       'email',
       'filefield',
       'filter',
       'forum',
-      'i18n',
       'i18nblocks',
-      'i18ncck',
+      'i18ncontent',
       'i18nmenu',
       'i18nprofile',
-      'i18nstrings',
-      'i18ntaxonomy',
+      'i18nsync',
       'imagecache',
       'imagefield',
-      'language',
-      'link',
-      'locale',
       'menu',
-      'node',
       'nodereference',
       'optionwidgets',
       'path',
-      'profile',
       'search',
       'statistics',
       'system',
       'taxonomy',
       'text',
+      'translation',
       'upload',
       'user',
       'userreference',
       // Include modules that do not have an upgrade path and are enabled in the
-      // source database, defined in the $noUpgradePath property
-      // in MigrateUpgradeForm.
+      // source database'.
       'date_api',
       'date_timezone',
       'event',
@@ -180,7 +175,12 @@ class Upgrade6Test extends MigrateUpgradeExecuteTestBase {
    */
   protected function getMissingPaths() {
     return [
-      'i18ncontent',
+      'i18n',
+      'i18ncck',
+      'i18nstrings',
+      'i18ntaxonomy',
+      'locale',
+      'node',
     ];
   }
 

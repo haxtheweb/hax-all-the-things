@@ -2,11 +2,5 @@ name: Migrate
 type: module
 description: 'Handles migrations'
 package: Migration
-# version: VERSION
-# core: 8.x
-
-# Information added by Drupal.org packaging script on 2019-02-06
-version: '8.6.8'
-core: '8.x'
-project: 'drupal'
-datestamp: 1549466629
+version: VERSION
+core: 8.x

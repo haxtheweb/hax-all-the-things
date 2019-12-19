@@ -2,11 +2,5 @@ name: 'Module installer config test'
 description: 'Support module for tests that require a failed module install.'
 type: module
 package: Testing
-# core: 8.x
-# version: VERSION
-
-# Information added by Drupal.org packaging script on 2019-02-06
-version: '8.6.8'
-core: '8.x'
-project: 'drupal'
-datestamp: 1549466629
+core: 8.x
+version: VERSION

@@ -16,6 +16,11 @@ class UpdatePostUpdateTest extends UpdatePathTestBase {
   /**
    * {@inheritdoc}
    */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
   protected function setDatabaseDumpFiles() {
     $this->databaseDumpFiles = [
       __DIR__ . '/../../../../tests/fixtures/update/drupal-8.bare.standard.php.gz',
@@ -77,6 +82,8 @@ class UpdatePostUpdateTest extends UpdatePathTestBase {
       $this->assertEqual($existing_updates[$expected_update], 1, new FormattableMarkup("@expected_update exists in 'existing_updates' key and only appears once.", ['@expected_update' => $expected_update]));
     }
 
+    $this->drupalGet('update.php/selection');
+    $this->updateRequirementsProblem();
     $this->drupalGet('update.php/selection');
     $this->assertText('No pending updates.');
   }

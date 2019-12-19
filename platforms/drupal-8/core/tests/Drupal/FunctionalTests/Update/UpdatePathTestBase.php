@@ -3,13 +3,16 @@
 namespace Drupal\FunctionalTests\Update;
 
 use Drupal\Component\Utility\Crypt;
+use Drupal\Core\Site\Settings;
 use Drupal\Core\Test\TestRunnerKernel;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\SchemaCheckTestTrait;
 use Drupal\Core\Database\Database;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Url;
+use Drupal\Tests\RequirementsPageTrait;
 use Drupal\user\Entity\User;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,6 +45,7 @@ use Symfony\Component\HttpFoundation\Request;
 abstract class UpdatePathTestBase extends BrowserTestBase {
 
   use SchemaCheckTestTrait;
+  use RequirementsPageTrait;
 
   /**
    * Modules to enable after the database is loaded.
@@ -160,8 +164,10 @@ abstract class UpdatePathTestBase extends BrowserTestBase {
 
     // Set the update url. This must be set here rather than in
     // self::__construct() or the old URL generator will leak additional test
-    // sites.
-    $this->updateUrl = Url::fromRoute('system.db_update');
+    // sites. Additionally, we need to prevent the path alias processor from
+    // running because we might not have a working alias system before running
+    // the updates.
+    $this->updateUrl = Url::fromRoute('system.db_update', [], ['path_processing' => FALSE]);
 
     $this->setupBaseUrl();
 
@@ -181,7 +187,12 @@ abstract class UpdatePathTestBase extends BrowserTestBase {
     $this->installDrupal();
 
     // Add the config directories to settings.php.
-    drupal_install_config_directories();
+    $sync_directory = Settings::get('config_sync_directory');
+    \Drupal::service('file_system')->prepareDirectory($sync_directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
+
+    // Ensure the default temp directory exist and is writable. The configured
+    // temp directory may be removed during update.
+    \Drupal::service('file_system')->prepareDirectory($this->tempFilesDirectory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
 
     // Set the container. parent::rebuildAll() would normally do this, but this
     // not safe to do here, because the database has not been updated yet.
@@ -264,6 +275,18 @@ abstract class UpdatePathTestBase extends BrowserTestBase {
       'required' => TRUE,
     ];
 
+    // Force every update hook to only run one entity per batch.
+    $settings['entity_update_batch_size'] = (object) [
+      'value' => 1,
+      'required' => TRUE,
+    ];
+
+    // Set up sync directory.
+    $settings['settings']['config_sync_directory'] = (object) [
+      'value' => $this->publicFilesDirectory . '/config_sync',
+      'required' => TRUE,
+    ];
+
     $this->writeSettings($settings);
   }
 
@@ -287,6 +310,7 @@ abstract class UpdatePathTestBase extends BrowserTestBase {
     ]);
 
     $this->drupalGet($this->updateUrl);
+    $this->updateRequirementsProblem();
     $this->clickLink(t('Continue'));
 
     $this->doSelectionTest();
@@ -319,18 +343,54 @@ abstract class UpdatePathTestBase extends BrowserTestBase {
           }
         }
       }
-      // Reset the static cache of drupal_get_installed_schema_version() so that
-      // more complex update path testing works.
-      drupal_static_reset('drupal_get_installed_schema_version');
+
+      // Ensure that the container is updated if any modules are installed or
+      // uninstalled during the update.
+      /** @var \Drupal\Core\Extension\ModuleHandlerInterface $module_handler */
+      $module_handler = $this->container->get('module_handler');
+      $config_module_list = $this->config('core.extension')->get('module');
+      $module_handler_list = $module_handler->getModuleList();
+      $modules_installed = FALSE;
+      // Modules that are in configuration but not the module handler have been
+      // installed.
+      foreach (array_keys(array_diff_key($config_module_list, $module_handler_list)) as $module) {
+        $module_handler->addModule($module, drupal_get_path('module', $module));
+        $modules_installed = TRUE;
+      }
+      $modules_uninstalled = FALSE;
+      $module_handler_list = $module_handler->getModuleList();
+      // Modules that are in the module handler but not configuration have been
+      // uninstalled.
+      foreach (array_keys(array_diff_key($module_handler_list, $config_module_list)) as $module) {
+        $modules_uninstalled = TRUE;
+        unset($module_handler_list[$module]);
+      }
+      if ($modules_installed || $modules_uninstalled) {
+        // Note that resetAll() does not reset the kernel module list so we
+        // have to do that manually.
+        $this->kernel->updateModules($module_handler_list, $module_handler_list);
+      }
+
+      // If we have successfully clicked 'Apply pending updates' then we need to
+      // clear the caches in the update test runner as this has occurred as part
+      // of the updates.
+      $this->resetAll();
 
       // The config schema can be incorrect while the update functions are being
       // executed. But once the update has been completed, it needs to be valid
       // again. Assert the schema of all configuration objects now.
       $names = $this->container->get('config.storage')->listAll();
+
+      // Allow tests to opt out of checking specific configuration.
+      $exclude = $this->getConfigSchemaExclusions();
       /** @var \Drupal\Core\Config\TypedConfigManagerInterface $typed_config */
       $typed_config = $this->container->get('config.typed');
-      $typed_config->clearCachedDefinitions();
       foreach ($names as $name) {
+        if (in_array($name, $exclude, TRUE)) {
+          // Skip checking schema if the config is listed in the
+          // $configSchemaCheckerExclusions property.
+          continue;
+        }
         $config = $this->config($name);
         $this->assertConfigSchema($typed_config, $name, $config->get());
       }
@@ -385,7 +445,7 @@ abstract class UpdatePathTestBase extends BrowserTestBase {
     $account = User::load(1);
     $account->setPassword($this->rootUser->pass_raw);
     $account->setEmail($this->rootUser->getEmail());
-    $account->setUsername($this->rootUser->getUsername());
+    $account->setUsername($this->rootUser->getAccountName());
     $account->save();
   }
 
