@@ -83,7 +83,7 @@ function hax_hax_app_store() {
  */
 function hax_hax_blox() {
   $config = \Drupal::config('hax.settings');
-  $blox = $config->get('hax_blox');
+  $blox = json_decode($config->get('hax_blox'));
   // account for no setting so we at least have SOMETHING
   // for those initially using the editor
   if (!$blox || $blox == '') {
@@ -98,7 +98,7 @@ function hax_hax_blox() {
  */
 function hax_hax_stax() {
   $config = \Drupal::config('hax.settings');
-  $stax = $config->get('hax_stax');
+  $stax = json_decode($config->get('hax_stax'));
   // account for no setting so we at least have SOMETHING
   // for those initially using the editor
   if (!$stax || $stax == '') {
