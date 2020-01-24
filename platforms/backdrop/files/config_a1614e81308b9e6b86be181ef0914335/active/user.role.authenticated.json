@@ -1,0 +1,14 @@
+{
+    "_config_name": "user.role.authenticated",
+    "name": "authenticated",
+    "label": "Authenticated",
+    "weight": "1",
+    "permissions": [
+        "access content",
+        "access comments",
+        "post comments",
+        "skip comment approval",
+        "upload editor images",
+        "use text format filtered_html"
+    ]
+}
