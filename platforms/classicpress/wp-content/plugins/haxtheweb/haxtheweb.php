@@ -282,7 +282,7 @@ function _HAXTHEWEB_site_connection() {
       "operations": {
         "browse": {
           "method": "GET",
-          "endPoint": "wp-json/haxtheweb/v1/search-files.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
+          "endPoint": "wp-json.php/haxtheweb/v1/search-files.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
           "pagination": {
             "style": "link",
             "props": {
@@ -315,7 +315,7 @@ function _HAXTHEWEB_site_connection() {
         },
         "add": {
           "method": "POST",
-          "endPoint": "wp-json/haxtheweb/v1/file-upload.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
+          "endPoint": "wp-json.php/haxtheweb/v1/file-upload.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
           "acceptsGizmoTypes": [
             "image",
             "video",

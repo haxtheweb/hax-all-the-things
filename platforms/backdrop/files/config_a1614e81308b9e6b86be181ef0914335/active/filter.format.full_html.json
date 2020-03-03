@@ -12,13 +12,13 @@
             "settings": []
         },
         "filter_autop": {
-            "status": 1,
+            "status": 0,
             "weight": 1,
             "module": "filter",
             "settings": []
         },
         "filter_url": {
-            "status": 1,
+            "status": 0,
             "weight": 0,
             "settings": {
                 "filter_url_length": "72"
