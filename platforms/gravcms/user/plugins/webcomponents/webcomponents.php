@@ -204,7 +204,7 @@ class WebcomponentsPlugin extends Plugin
     // hook into webomponents service to get our header material we need for the polyfill
     $inline = $this->applyWebcomponents($this->getBaseURL());
     // add it into the document
-    $assets->addInlineJs('</script>' . $inline . '<script>', array('priority' => 102, 'group' => 'bottom'));
+    $assets->addInlineJs('</script>' . $inline . '<script>', array('priority' => 102));
   }
 
   /**
@@ -231,7 +231,10 @@ class WebcomponentsPlugin extends Plugin
    * @return string  The base url path to the user / data / webcomponents directory
    */
   public function getBaseURL() {
-    if ($this->config->get('plugins.webcomponents.location') != 'other') {
+    if ($this->config->get('plugins.webcomponents.location') == 'user/data/webcomponents/') {
+      return $this->grav['base_url'] . '/user/data/webcomponents/';
+    }
+    else if ($this->config->get('plugins.webcomponents.location') != 'other') {
       return $this->config->get('plugins.webcomponents.location');
     }
     else if ($this->config->get('plugins.webcomponents.location_other') != '') {

@@ -14,6 +14,9 @@ process:
       <img src="https://images-assets.nasa.gov/image/0003786/0003786~thumb.jpg" alt="" preload="lazy"/>
     <div>gggg</div></meme-maker>
 </grid-plate>
-<p>What is ELMS: Learning Network? How is it fundamentally different from other learning technologies? Why is it your reading this when it's example text that you've just added to see how to make a really solid introduction to a new unit of instruction? Let's keep reading to find out!</p>
+<grid-plate layout="1-1-1" responsive-size="md" breakpoint-sm="900" breakpoint-md="1200" breakpoint-lg="1500" breakpoint-xl="1800" style="width: 100%;" hide-ops column-widths="[&quot;33.3333333%&quot;,&quot;33.3333333%&quot;,&quot;33.3333333%&quot;]"><p style="width: 100%;" slot="col-1">gies? Why is it your reading this when it's example text that you've just added to see how to make a reall</p>
+<p style="width: 100%;" slot="col-2">What is ELMS: Learning Network? How is it fundamentally different from other learning technolo</p>
+<p style="width: 100%;" slot="col-3">y solid introduction to a new unit of instruction? Let's keep reading to find out!</p>
+</grid-plate>
 
       
