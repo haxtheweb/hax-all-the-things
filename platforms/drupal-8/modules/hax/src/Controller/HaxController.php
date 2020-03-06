@@ -152,7 +152,6 @@ class HaxController extends NodeViewController {
     }
     return AccessResult::forbidden();
   }
-
   /**
    * Save a file to the file system.
    *
@@ -173,7 +172,7 @@ class HaxController extends NodeViewController {
     // Check for the uploaded file from our 1-page-uploader app
     // and ensure there are entity permissions to create a file via HAX.
     // See https://www.drupal.org/project/hax/issues/2962055#comment-12617576.
-    if (\Drupal::csrfToken()->validate($token) &&
+    if (\Drupal::csrfToken()->validate($token, 'hax-file-save') &&
       \Drupal::currentUser()->hasPermission('upload files via hax') && isset($_FILES['file-upload'])) {
       $upload = $_FILES['file-upload'];
       // Check for a file upload.
@@ -228,8 +227,7 @@ class HaxController extends NodeViewController {
    */
   public function loadAppStore($token) {
     // Ensure we had data PUT here and it is valid.
-    if (\Drupal::csrfToken()->validate($token)) {
-
+    if (\Drupal::csrfToken()->validate($token, 'hax-app-store')) {
       // Hooks and alters.
       // Add/alter apps.
       $appStore = \Drupal::moduleHandler()->invokeAll('hax_app_store');

@@ -6,6 +6,7 @@
  */
 
 use Drupal\hax\HaxService;
+use Drupal\Core\Site\Settings;
 
 /**
  * Implements hook_preprocess_hook().
@@ -28,9 +29,8 @@ function hax_preprocess_field(&$vars) {
   // @todo we could do this to other things too but this is the piece that forces it to body only
   if ($vars['field_name'] == 'body' && $entity_type == 'node' && $view_mode == 'full'
     && \Drupal::config('hax.settings')->get('hax_autoload_element_node_view')) {
-
     $appStoreConnection = json_encode([
-      'url' => base_path() . 'hax-app-store/' . \Drupal::csrfToken()->get(),
+      'url' => base_path() . 'hax-app-store/' . \Drupal::csrfToken()->get('hax-app-store'),
     ]);
 
     // Get the NID from current path.
@@ -129,6 +129,15 @@ function hax_hax_autoloader() {
 function _hax_site_connection() {
   global $base_url;
   $parts = explode('://', $base_url);
+  if ($parts[0] == 'http' && isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
+    $parts[0] = 'https';
+  }
+  // if we are in a reverse proxie environment then force to https
+  // this is more difficult to detect then its worth and anyone running proxies
+  // will be doing so in https
+  else if (Settings::get('reverse_proxy', false)) {
+    $parts[0] = 'https';
+  }
   // Built in support when file_entity and restws is in place.
   $title = t('Internal files');
   $json = '{
@@ -179,7 +188,7 @@ function _hax_site_connection() {
         },
         "add": {
           "method": "POST",
-          "endPoint": "hax-file-save/' . \Drupal::csrfToken()->get() . '",
+          "endPoint": "hax-file-save/' . \Drupal::csrfToken()->get('hax-file-save') . '",
           "acceptsGizmoTypes": [
             "image",
             "video",
