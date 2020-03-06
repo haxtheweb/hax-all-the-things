@@ -295,11 +295,6 @@ function _hax_node_form($node) {
   $config = config('hax.settings');
   // set page title
   backdrop_set_title(t('HAX edit @title', array('@title' => $node->title)), PASS_THROUGH);
-  // fake a component to get it into the head of the document, heavy weighting
-  $component = new stdClass();
-  $component->machine_name = 'cms-hax';
-  $component->file = libraries_get_path('webcomponents') . '/polymer/bower_components/cms-hax/cms-hax.html';
-  _webcomponents_add_to_head($component, 10000);
   $appStoreConnection = array(
     'url' => base_path() . 'hax-app-store/' . backdrop_get_token('hax'),
   );

@@ -3,13 +3,15 @@
 		<div class="form-data">
 			<wysiwyg-hax
 				open-default
-				align="left"
+				element-align="left"
+		        offset-margin="66px 0px 0px 0px"
 				app-store-connection='{{ appStoreConnection }}'
 				field-name="{{ (scope ~ field.name)|fieldName }}"
 				class="hax-editor"
 			>
 			{{ haxSlotArea|raw }}
 		  </wysiwyg-hax>
+		<script>document.querySelector('wysiwyg-hax').saveButtonSelector = document.querySelector('button[type="submit"]');</script>
 		</div>
 	</div>
 {% endblock %}

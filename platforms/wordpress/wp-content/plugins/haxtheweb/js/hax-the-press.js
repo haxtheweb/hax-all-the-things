@@ -10,7 +10,8 @@
     haxThePress.fieldName = 'content';
     haxThePress.fieldId = 'content';
     haxThePress.openDefault = true;
-    haxThePress.align = 'left';
+    haxThePress.elementAlign = 'left';
+    haxThePress.saveButtonSelector = document.querySelector('input[type="submit"]#publish');
     if (window.haxThePressConnector) {
       haxThePress.appStoreConnection = window.haxThePressConnector;
     }

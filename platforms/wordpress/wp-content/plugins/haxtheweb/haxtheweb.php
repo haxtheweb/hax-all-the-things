@@ -1,14 +1,14 @@
 <?php
 /**
  * @package haxtheweb
- * @version 3.2.0
+ * @version 3.3.1
  */
 /*
 Plugin Name: haxtheweb
 Plugin URI: https://github.com/elmsln/wp-plugin-hax
 Description: An ecosystem agnostic web editor to democratise the web and liberate users of platforms.
 Author: Bryan Ollendyke
-Version: 3.2.0
+Version: 3.3.1
 Author URI: https://haxtheweb.org/
 */
 
@@ -17,7 +17,7 @@ include_once 'WebComponentsService.php';
 // default to PSU "cdn"
 define('WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION', 'https://webcomponents.psu.edu/cdn/');
 // default list of elements to supply
-define('WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST', 'oer-schema lrn-aside grid-plate tab-list magazine-cover video-player image-compare-slider license-element self-check multiple-choice lrn-table hero-banner task-list media-image lrndesign-blockquote meme-maker a11y-gif-player paper-audio-player wikipedia-query lrn-vocab lrn-math person-testimonial citation-element code-editor place-holder stop-note q-r wave-player');
+define('WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST', 'oer-schema lrn-aside grid-plate tab-list magazine-cover video-player image-compare-slider license-element self-check multiple-choice lrn-table hero-banner task-list media-image lrndesign-blockquote meme-maker a11y-gif-player paper-audio-player wikipedia-query lrn-vocab lrn-math person-testimonial citation-element place-holder stop-note q-r');
 
 // plugin dependency check
 // based on https://github.com/DevinVinson/WordPress-Plugin-Boilerplate/issues/468#issuecomment-361235083
@@ -39,7 +39,9 @@ register_activation_hook( __FILE__, 'haxtheweb_activate' );
 // Wire up HAX to hijack the Classic editor
 function haxtheweb_wordpress($hook) {
   if ($hook == 'post.php' || $hook == 'post-new.php') {
-    wp_enqueue_script( 'haxtheweb_the_press', plugins_url('js/hax-the-press.js', __FILE__), array(), false, true );
+    wp_enqueue_script('haxtheweb_the_press', plugins_url('js/hax-the-press.js', __FILE__), array(), false, true );
+    wp_register_style('haxtheweb_stylesheet', plugins_url('css/haxtheweb.css', __FILE__));
+    wp_enqueue_style( 'haxtheweb_stylesheet' );
   }
 }
 add_action( 'admin_enqueue_scripts', 'haxtheweb_wordpress' );
@@ -47,7 +49,7 @@ add_action( 'admin_enqueue_scripts', 'haxtheweb_wordpress' );
 // Wire up web components to WordPress
 function haxtheweb_wordpress_connector() {
   $data = array(
-    'url' => get_site_url(null, '/wp-json.php/haxtheweb/v1/appstore.json?token=' . haxtheweb_generate_secure_key('haxTheWeb')),
+    'url' => get_site_url(null, '/wp-json/haxtheweb/v1/appstore.json?token=' . haxtheweb_generate_secure_key('haxTheWeb')),
   );
   print '<style>#adminmenuwrap{z-index:1000 !important;}h-a-x{padding:40px;}</style><script>window.haxThePressConnector=\'' . json_encode($data) . '\';</script>';
 }
@@ -282,7 +284,7 @@ function _HAXTHEWEB_site_connection() {
       "operations": {
         "browse": {
           "method": "GET",
-          "endPoint": "wp-json.php/haxtheweb/v1/search-files.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
+          "endPoint": "wp-json/haxtheweb/v1/search-files.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
           "pagination": {
             "style": "link",
             "props": {
@@ -315,7 +317,7 @@ function _HAXTHEWEB_site_connection() {
         },
         "add": {
           "method": "POST",
-          "endPoint": "wp-json.php/haxtheweb/v1/file-upload.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
+          "endPoint": "wp-json/haxtheweb/v1/file-upload.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
           "acceptsGizmoTypes": [
             "image",
             "video",

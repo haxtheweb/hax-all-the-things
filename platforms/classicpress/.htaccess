@@ -1,12 +1,4 @@
 
 # BEGIN ClassicPress
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteBase /classicpress/
-RewriteRule ^index\.php$ - [L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /classicpress/index.php [L]
-</IfModule>
 
 # END ClassicPress

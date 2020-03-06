@@ -18,7 +18,6 @@ class WebComponentsService {
       window.__appCDN="' . $directory . '";
       window.__appForceUpgrade=' . $forceUpgrade . ';
     </script>
-    <script src="' . $directory . 'build.js"></script>  
-    <style>hax-tray { z-index:99999;}</style>';
+    <script src="' . $directory . 'build.js"></script>';
   }
 }

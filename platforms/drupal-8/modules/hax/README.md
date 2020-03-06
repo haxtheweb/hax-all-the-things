@@ -33,6 +33,9 @@ By default, the auto-loaded elements will append to the page on node view mode
 full. To override this, set hax_autoload_element_node_view to false in
 settings.php
 
+## Proxie environments
+To upload media in a proxied environment you may need to add `$settings['base_url'] = "https://yourdomain.com";` to `settings.php` which has the actual full base url to the server. Most configurations this setting won't be needed but in testing proxies can cause issues as far as how this address is default configured in Drupal.
+
 # Front end Developers
 You may build HAX from source if needed. HAX defaults to use CDNs which will effectively point to
 this directory or some mutation of it -- https://github.com/elmsln/HAXcms/tree/master/build
