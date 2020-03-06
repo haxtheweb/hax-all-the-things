@@ -4,6 +4,7 @@ namespace Drupal\hax\Controller;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\node\Controller\NodeViewController;
 use Drupal\node\NodeInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -189,10 +190,11 @@ class HaxController extends NodeViewController {
         }
         // See if Drupal can load from this data source.
         if ($file = file_save_data($data, $file_wrapper . '://' . $upload['name'])) {
+          $uri = str_replace($GLOBALS['base_url'] . '/', $GLOBALS['base_path'],file_create_url($file->getFileUri()));
           $return = array(
-            'file' => array( 
-              'url' => file_create_url($file->getFileUri()),
-              'uri' => $file->getFileUri(),
+            'file' => array(
+              'url' => $uri, // this is actually the uri but we can't return a full url safely
+              'uri' => $uri,
               'status' => $file->status,
               'status' => $file->timestamp,
               'uid' => $file->uid,
