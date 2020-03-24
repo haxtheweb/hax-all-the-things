@@ -15,7 +15,7 @@ Author URI: https://haxtheweb.org/
 include_once 'HAXService.php';
 include_once 'WebComponentsService.php';
 // default to PSU "cdn"
-define('WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION', 'https://webcomponents.psu.edu/cdn/');
+define('WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION', 'https://cdn.webcomponents.psu.edu/cdn/');
 // default list of elements to supply
 define('WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST', 'oer-schema lrn-aside grid-plate tab-list magazine-cover video-player image-compare-slider license-element self-check multiple-choice lrn-table hero-banner task-list media-image lrndesign-blockquote meme-maker a11y-gif-player paper-audio-player wikipedia-query lrn-vocab lrn-math person-testimonial citation-element code-editor place-holder stop-note q-r wave-player');
 
@@ -114,7 +114,7 @@ function haxtheweb_webcomponents_setting_section_callback_function() {
 function haxtheweb_webcomponents_setting_callback_function() {
 	$selected = get_option( 'haxtheweb_webcomponents_location', WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION );
 	$options = array(
-		'https://webcomponents.psu.edu/cdn/' => 'Penn State CDN',
+		'https://cdn.webcomponents.psu.edu/cdn/' => 'Penn State CDN',
 		'https://cdn.waxam.io/' => 'Waxam CDN',
 		'/wp-content/haxtheweb/' => 'Local libraries folder (/wp-content/haxtheweb/)',
 		'other' => 'Other',

@@ -104,10 +104,10 @@ function webcomponents_admin_settings() {
   $form['webcomponents_project_location'] = [
     '#type' => 'select',
     '#title' => t('Webcomponents Location'),
-    '#default_value' => variable_get('webcomponents_project_location', 'https://webcomponents.psu.edu/cdn/'),
+    '#default_value' => variable_get('webcomponents_project_location', 'https://cdn.webcomponents.psu.edu/cdn/'),
     '#options' => array(
       'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
-      'https://webcomponents.psu.edu/cdn/' => 'Penn State CDN',
+      'https://cdn.webcomponents.psu.edu/cdn/' => 'Penn State CDN',
       'https://cdn.waxam.io/' => 'Waxam CDN',
       'other' => t('Other'),
     ),
@@ -127,7 +127,7 @@ function webcomponents_admin_settings() {
  * Implements hook_init().
  */
 function webcomponents_init() {
-  $location = variable_get('webcomponents_project_location', 'https://webcomponents.psu.edu/cdn/');
+  $location = variable_get('webcomponents_project_location', 'https://cdn.webcomponents.psu.edu/cdn/');
   if ($location == 'other') {
     $location = variable_get('webcomponents_project_location_other', '');
   }

@@ -62,7 +62,7 @@ class HaxSettings extends ConfigFormBase {
       '#title' => $this->t('Webcomponents Location'),
       '#default_value' => $config->get('hax_project_location'),
       '#options' => array(
-        'https://webcomponents.psu.edu/cdn/' => 'Penn State CDN',
+        'https://cdn.webcomponents.psu.edu/cdn/' => 'Penn State CDN',
         'https://cdn.waxam.io/' => 'Waxam CDN',
         'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
         'other' => $this->t('Other'),

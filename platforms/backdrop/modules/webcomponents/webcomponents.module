@@ -57,7 +57,7 @@ function webcomponents_settings_form($form, $form_state) {
     '#default_value' => $config->get('webcomponents_project_location'),
     '#options' => array(
       'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
-      'https://webcomponents.psu.edu/cdn/' => 'Penn State CDN',
+      'https://cdn.webcomponents.psu.edu/cdn/' => 'Penn State CDN',
       'https://cdn.waxam.io/' => 'Waxam CDN',
       'other' => t('Other'),
     ),
