@@ -113,7 +113,7 @@
     "kind-of": "6.0.2",
     "is-number": "4.0.0",
     "once": "1.4.0",
-    "minimist": "1.2.0",
+    "minimist": "1.2.2",
     "ajv": "6.5.5",
     "fast-deep-equal": "2.0.1",
     "json-schema-traverse": "0.4.1",
