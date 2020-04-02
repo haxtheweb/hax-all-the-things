@@ -6,7 +6,7 @@ type = module
 dependencies[] = webcomponents
 configure = admin/config/content/hax
 
-; Added by Backdrop CMS packaging script on 2020-03-06
+; Added by Backdrop CMS packaging script on 2020-04-02
 project = hax
-version = 1.x-3.3.1
+version = 1.x-3.6.0
 timestamp = 1564765040

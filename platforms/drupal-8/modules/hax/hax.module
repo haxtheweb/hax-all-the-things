@@ -117,6 +117,8 @@ function hax_hax_autoloader() {
     ->get('hax_autoload_element_list');
   // Blow up based on space.
   $autoloader = explode(' ', $autoloaderstring);
+  // these must be on here
+  array_push($autoloader,'cms-token', 'cms-views', 'cms-block', 'cms-entity');
   return $autoloader;
 }
 
