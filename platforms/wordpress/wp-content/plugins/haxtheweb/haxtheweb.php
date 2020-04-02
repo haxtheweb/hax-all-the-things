@@ -1,14 +1,14 @@
 <?php
 /**
  * @package haxtheweb
- * @version 3.6.0
+ * @version 3.6.1
  */
 /*
 Plugin Name: haxtheweb
 Plugin URI: https://github.com/elmsln/wp-plugin-hax
 Description: An ecosystem agnostic web editor to democratise the web and liberate users of platforms.
 Author: Bryan Ollendyke
-Version: 3.6.0
+Version: 3.6.1
 Author URI: https://haxtheweb.org/
 */
 
@@ -374,12 +374,15 @@ function haxtheweb_webcomponents_deps() {
   }
   // append base_path if this site has a url to start it
   if (strpos($location, 'http') === FALSE) {
-	$location = get_site_url(null, $location);
+	  $location = get_site_url(null, $location);
   }
-  // load webcomponentsjs polyfill library if it exists
-  $files = array('build.js');
+  $buildLocation = $location;
+  // support for build file to come local but assets via CDN
+  if (get_option('haxtheweb_webcomponents_local_build_file', false)) {
+    $buildLocation = '/wp-content/haxtheweb/';
+  }
   $wc = new WebComponentsService();
-  print $wc->applyWebcomponents($location, $files);
+  print $wc->applyWebcomponents($buildLocation, $location);
 }
 // front end paths
 add_action( 'wp_footer', 'haxtheweb_webcomponents_deps' );

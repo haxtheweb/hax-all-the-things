@@ -7,15 +7,42 @@ define('WEBCOMPONENTS_CLASS_IDENTIFIER', 'webcomponent-module-selector');
 include_once 'WebComponentsService.php';
 
 /**
+ * Implements hook_preprocess_page().
+ */
+function webcomponents_preprocess_page(&$vars) {
+  $config = config('webcomponents.settings');
+  // generate autoload list
+  $location = $config->get('webcomponents_project_location');
+  if ($location == 'other') {
+    $location = $config->get('webcomponents_project_location_other');
+  }
+  if (strpos($location, 'http') === FALSE) {
+    $location = base_path() . $location;
+  }
+  $buildLocation = $location;
+  // support for build file to come local but assets via CDN
+  if ($config->get('webcomponents_project_local_build_file')) {
+    $buildLocation = base_path() . 'sites/all/libraries/webcomponents/';
+  }
+  $wc = new WebComponentsService();
+  $markup = $wc->applyWebcomponents($buildLocation, $location);
+  backdrop_alter('webcomponents_build_integration_markup', $markup);
+  $element = array(
+    '#type' => 'markup',
+    '#markup' => $markup,
+  );
+  $vars['page_bottom'] .= backdrop_render($element);
+}
+
+/**
  * Implements hook_menu().
  */
 function webcomponents_menu() {
-  $items = array();
-  $items['admin/config/content/webcomponents'] = array(
+    $items['admin/config/content/webcomponents'] = array(
     'title' => 'Web components',
     'description' => 'Settings for basic customizations to web components.',
     'page callback' => 'backdrop_get_form',
-    'page arguments' => array('webcomponents_admin_settings'),
+    'page arguments' => array('webcomponents_settings_form'),
     'type' => MENU_NORMAL_ITEM,
     'access arguments' => array('administer site configuration'),
   );
@@ -25,15 +52,17 @@ function webcomponents_menu() {
 /**
  * Set CDN if you want
  */
-function webcomponents_admin_settings($form, &$form_state) {
+function webcomponents_settings_form($form, $form_state) {
+  $config = config('webcomponents.settings');
+  $form = array();
   $form['webcomponents_project_location'] = [
     '#type' => 'select',
     '#title' => t('Webcomponents Location'),
-    '#default_value' => variable_get('webcomponents_project_location', 'https://cdn.webcomponents.psu.edu/cdn/'),
+    '#default_value' => $config->get('webcomponents_project_location'),
     '#options' => array(
+      'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
       'https://cdn.webcomponents.psu.edu/cdn/' => 'Penn State CDN',
       'https://cdn.waxam.io/' => 'Waxam CDN',
-      'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
       'other' => t('Other'),
     ),
     '#description' => t("Use this to point to CDNs or if you've installed your web components some place else. Start without a slash and end with a slash."),
@@ -41,39 +70,30 @@ function webcomponents_admin_settings($form, &$form_state) {
   $form['webcomponents_project_location_other'] = [
     '#type' => 'textfield',
     '#title' => t('Other Location'),
-    '#default_value' => variable_get('webcomponents_project_location_other', ''),
+    '#default_value' => $config->get('webcomponents_project_location_other'),
     '#maxlength' => 1000,
     '#description' => t("Only use this if you need to use a source other than the above supported options."),
   ];
-  return system_settings_form($form);
+  // Add a submit button
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+
+  return $form;
 }
 
 /**
- * Implements hook_process_html().
+ * Submit handler for module_settings_form().
  */
-function webcomponents_process_html(&$variables) {
-  $location = variable_get('webcomponents_project_location', 'https://cdn.webcomponents.psu.edu/cdn/');
-  if ($location == 'other') {
-    $location = variable_get('webcomponents_project_location_other', '');  
-  }
-  // append base_path if this site has a url to start it
-  if (strpos($location, 'http') === FALSE) {
-    $location = base_path() . $location;
-  }
-  $buildLocation = $location;
-  // support for build file to come local but assets via CDN
-  if (variable_get('webcomponents_project_local_build_file', false)) {
-    $buildLocation = base_path() . 'sites/all/libraries/webcomponents/';
-  }
-  $wc = new WebComponentsService();
-  $markup = $wc->applyWebcomponents($buildLocation, $location);
-  backdrop_alter('webcomponents_build_integration_markup', $markup);
-  // load webcomponentsjs polyfill library if it exists
-  $element = array(
-    '#type' => 'markup',
-    '#markup' => $markup,
-  );
-  $variables['page_bottom'] .= backdrop_render($element);
+function webcomponents_settings_form_submit($form, &$form_state) {
+  $config = config('webcomponents.settings');
+  $config->set('webcomponents_project_location', $form_state['values']['webcomponents_project_location']);
+  $config->set('webcomponents_project_location_other', $form_state['values']['webcomponents_project_location_other']);
+  $config->save();
+
+  backdrop_set_message(t('The configuration options have been saved.'));
 }
 
 /**
@@ -91,14 +111,25 @@ function webcomponents_entity_info() {
     ),
     'uri callback' => 'webcomponent_uri',
     'module' => 'webcomponents',
-    'entity class' => 'Entity',
-    'controller class' => 'EntityAPIController',
+    'entity class' => 'WebcomponentEntity',
+    'controller class' => 'WebcomponentEntityController',
     'fieldable' => FALSE,
     'bundle keys' => array(
       'bundle' => 'type',
     ),
   );
   return $info;
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function webcomponents_autoload_info() {
+  return array(
+    'WebComponentEntity' => 'includes/webcomponents.entity.inc',
+    'WebcomponentEntityController' => 'includes/webcomponents.entity.inc',
+    'WebcomponentEntityControllerInterface' => 'includes/webcomponents.entity.inc',
+  );
 }
 
 /**
@@ -309,7 +340,7 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
                 foreach ($component as $key => $value) {
                   // see if any aspects changed
                   if ($key != 'file' && isset($entity->{$key}) && $entity->{$key} != $value) {
-                    if (!$hide_messages && !variable_get('webcomponents_hide_messages', FALSE)) {
+                    if (!$hide_messages) {
                       backdrop_set_message(t('Web components have changed! Make sure that your attributes are correctly reflected in your site. @key changed on @machine from @old to @new', array('@key' => $key, '@old' => serialize($entity->{$key}), '@new' => serialize($value), '@machine' => $component->machine_name)), 'warning', TRUE);
                     }
                     $entity->{$key} = $value;
@@ -318,7 +349,7 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
                 if (is_array($entity->properties)) {
                   $entity->properties = serialize($entity->properties);
                 }
-                entity_save('webcomponent', $entity);
+                $entity->save();
               }
               else {
                 // try and create the entity instead
@@ -328,7 +359,7 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
                 // ensure the file wasn't empty
                 if (isset($component->machine_name)) {
                   $entity = entity_create('webcomponent', (array)$component);
-                  entity_save('webcomponent', $entity);
+                  $entity->save();
                 }
               }
             }
@@ -336,6 +367,31 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
         }
       }
     }
+  }
+}
+
+/**
+ * Add webcomponent to the header of the site so it can work.
+ */
+function _webcomponents_add_to_head($component, $weight = 0, $hashSize = FALSE) {
+  // generate filename hash based on the size of the file
+  // this is a quick and dirty way to do invalidation when it updates without local cache refreshes client side
+  if (file_exists(BACKDROP_ROOT . '/' . $component->file)) {
+    if ($hashSize) {
+      $hash = '?h' . filesize(BACKDROP_ROOT . '/' . $component->file);
+    }
+    else {
+      $hash = '';
+    }
+    $element = array(
+      '#tag' => 'link', // The #tag is the html tag
+      '#attributes' => array( // Set up an array of attributes inside the tag
+        'href' => _webcomponents_base_path() . $component->file . $hash,
+        'rel' => 'import',
+      ),
+      '#weight' => $weight,
+    );
+    backdrop_add_html_head($element, 'webcomponent-' . $component->machine_name);
   }
 }
 
@@ -363,7 +419,7 @@ function _webcomponents_build_registry() {
 }
 
 /**
- * Assembles components available to backdrop.
+ * Assembles components available to Backdrop.
  * @return array files where components live
  */
 function webcomponents_load_webcomponents_files() {
@@ -383,12 +439,11 @@ function webcomponent_load_by_name($name) {
   $result = $query
   ->entityCondition('entity_type', 'webcomponent')
   ->propertyCondition('machine_name', $name)
-  ->range(0, 1)
   ->execute();
   // flip the results if it found them
   if (isset($result['webcomponent'])) {
     $tmp = array_pop($result['webcomponent']);
-    $entity = entity_load_single('webcomponent', $tmp->wid);
+    $entity = entity_load('webcomponent', $tmp->wid);
   }
   return $entity;
 }
