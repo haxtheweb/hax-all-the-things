@@ -1,0 +1,17 @@
+name: Forum
+type: module
+description: 'Provides discussion forums.'
+dependencies:
+  - drupal:node
+  - drupal:history
+  - drupal:taxonomy
+  - drupal:comment
+  - drupal:options
+package: Core
+# version: VERSION
+configure: forum.overview
+
+# Information added by Drupal.org packaging script on 2020-03-30
+version: '9.0.0-beta2'
+project: 'drupal'
+datestamp: 1585597457

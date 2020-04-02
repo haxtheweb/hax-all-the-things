@@ -7,38 +7,15 @@ define('WEBCOMPONENTS_CLASS_IDENTIFIER', 'webcomponent-module-selector');
 include_once 'WebComponentsService.php';
 
 /**
- * Implements hook_preprocess_page().
- */
-function webcomponents_preprocess_page(&$vars) {
-  $config = config('webcomponents.settings');
-  // generate autoload list
-  $location = $config->get('webcomponents_project_location');
-  if ($location == 'other') {
-    $location = $config->get('webcomponents_project_location_other');
-  }
-  if (strpos($location, 'http') === FALSE) {
-    $location = base_path() . $location;
-  }
-  // load webcomponentsjs polyfill library if it exists
-  $files = array('build.js');
-  backdrop_alter('webcomponents_build_file_location', $files);
-  $wc = new WebComponentsService();
-  $element = array(
-    '#type' => 'markup',
-    '#markup' => $wc->applyWebcomponents($location, $files),
-  );
-  $vars['page_bottom'] .= backdrop_render($element);
-}
-
-/**
  * Implements hook_menu().
  */
 function webcomponents_menu() {
-    $items['admin/config/content/webcomponents'] = array(
+  $items = array();
+  $items['admin/config/content/webcomponents'] = array(
     'title' => 'Web components',
     'description' => 'Settings for basic customizations to web components.',
-    'page callback' => 'backdrop_get_form',
-    'page arguments' => array('webcomponents_settings_form'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webcomponents_admin_settings'),
     'type' => MENU_NORMAL_ITEM,
     'access arguments' => array('administer site configuration'),
   );
@@ -48,17 +25,15 @@ function webcomponents_menu() {
 /**
  * Set CDN if you want
  */
-function webcomponents_settings_form($form, $form_state) {
-  $config = config('webcomponents.settings');
-  $form = array();
+function webcomponents_admin_settings($form, &$form_state) {
   $form['webcomponents_project_location'] = [
     '#type' => 'select',
     '#title' => t('Webcomponents Location'),
-    '#default_value' => $config->get('webcomponents_project_location'),
+    '#default_value' => variable_get('webcomponents_project_location', 'https://cdn.webcomponents.psu.edu/cdn/'),
     '#options' => array(
-      'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
       'https://cdn.webcomponents.psu.edu/cdn/' => 'Penn State CDN',
       'https://cdn.waxam.io/' => 'Waxam CDN',
+      'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
       'other' => t('Other'),
     ),
     '#description' => t("Use this to point to CDNs or if you've installed your web components some place else. Start without a slash and end with a slash."),
@@ -66,30 +41,39 @@ function webcomponents_settings_form($form, $form_state) {
   $form['webcomponents_project_location_other'] = [
     '#type' => 'textfield',
     '#title' => t('Other Location'),
-    '#default_value' => $config->get('webcomponents_project_location_other'),
+    '#default_value' => variable_get('webcomponents_project_location_other', ''),
     '#maxlength' => 1000,
     '#description' => t("Only use this if you need to use a source other than the above supported options."),
   ];
-  // Add a submit button
-  $form['actions']['#type'] = 'actions';
-  $form['actions']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save configuration'),
-  );
-
-  return $form;
+  return system_settings_form($form);
 }
 
 /**
- * Submit handler for module_settings_form().
+ * Implements hook_process_html().
  */
-function webcomponents_settings_form_submit($form, &$form_state) {
-  $config = config('webcomponents.settings');
-  $config->set('webcomponents_project_location', $form_state['values']['webcomponents_project_location']);
-  $config->set('webcomponents_project_location_other', $form_state['values']['webcomponents_project_location_other']);
-  $config->save();
-
-  backdrop_set_message(t('The configuration options have been saved.'));
+function webcomponents_process_html(&$variables) {
+  $location = variable_get('webcomponents_project_location', 'https://cdn.webcomponents.psu.edu/cdn/');
+  if ($location == 'other') {
+    $location = variable_get('webcomponents_project_location_other', '');  
+  }
+  // append base_path if this site has a url to start it
+  if (strpos($location, 'http') === FALSE) {
+    $location = base_path() . $location;
+  }
+  $buildLocation = $location;
+  // support for build file to come local but assets via CDN
+  if (variable_get('webcomponents_project_local_build_file', false)) {
+    $buildLocation = base_path() . 'sites/all/libraries/webcomponents/';
+  }
+  $wc = new WebComponentsService();
+  $markup = $wc->applyWebcomponents($buildLocation, $location);
+  drupal_alter('webcomponents_build_integration_markup', $markup);
+  // load webcomponentsjs polyfill library if it exists
+  $element = array(
+    '#type' => 'markup',
+    '#markup' => $markup,
+  );
+  $variables['page_bottom'] .= drupal_render($element);
 }
 
 /**
@@ -107,25 +91,14 @@ function webcomponents_entity_info() {
     ),
     'uri callback' => 'webcomponent_uri',
     'module' => 'webcomponents',
-    'entity class' => 'WebcomponentEntity',
-    'controller class' => 'WebcomponentEntityController',
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
     'fieldable' => FALSE,
     'bundle keys' => array(
       'bundle' => 'type',
     ),
   );
   return $info;
-}
-
-/**
- * Implements hook_autoload_info().
- */
-function webcomponents_autoload_info() {
-  return array(
-    'WebComponentEntity' => 'includes/webcomponents.entity.inc',
-    'WebcomponentEntityController' => 'includes/webcomponents.entity.inc',
-    'WebcomponentEntityControllerInterface' => 'includes/webcomponents.entity.inc',
-  );
 }
 
 /**
@@ -177,7 +150,7 @@ function _webcomponents_render_component($component) {
     }
     // allow other projects to add onto and modify the webcomponent before it renders
     // useful for tag wrapping for systems like HAX
-    backdrop_alter('webcomponent_render', $vars, $component);
+    drupal_alter('webcomponent_render', $vars, $component);
     $output = theme('webcomponent', $vars);
     return $output;
   }
@@ -203,7 +176,7 @@ function webcomponents_theme() {
       ),
       'render element' => 'element',
       'template' => 'webcomponent',
-      'path' => backdrop_get_path('module', 'webcomponents') . '/templates',
+      'path' => drupal_get_path('module', 'webcomponents') . '/templates',
     ),
   );
 }
@@ -272,7 +245,7 @@ function webcomponents_entity_load($entities, $type) {
  * @return array array of entities or empty.
  */
 function webcomponents_load_all($force_rebuild = FALSE) {
-  $entities = &backdrop_static(__FUNCTION__);
+  $entities = &drupal_static(__FUNCTION__);
   // @ignore druplart_conditional_assignment
   if (!$entities) {
     if (!$force_rebuild && $cached = cache_get('webcomponents')) {
@@ -336,8 +309,8 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
                 foreach ($component as $key => $value) {
                   // see if any aspects changed
                   if ($key != 'file' && isset($entity->{$key}) && $entity->{$key} != $value) {
-                    if (!$hide_messages) {
-                      backdrop_set_message(t('Web components have changed! Make sure that your attributes are correctly reflected in your site. @key changed on @machine from @old to @new', array('@key' => $key, '@old' => serialize($entity->{$key}), '@new' => serialize($value), '@machine' => $component->machine_name)), 'warning', TRUE);
+                    if (!$hide_messages && !variable_get('webcomponents_hide_messages', FALSE)) {
+                      drupal_set_message(t('Web components have changed! Make sure that your attributes are correctly reflected in your site. @key changed on @machine from @old to @new', array('@key' => $key, '@old' => serialize($entity->{$key}), '@new' => serialize($value), '@machine' => $component->machine_name)), 'warning', TRUE);
                     }
                     $entity->{$key} = $value;
                   }
@@ -345,7 +318,7 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
                 if (is_array($entity->properties)) {
                   $entity->properties = serialize($entity->properties);
                 }
-                $entity->save();
+                entity_save('webcomponent', $entity);
               }
               else {
                 // try and create the entity instead
@@ -355,7 +328,7 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
                 // ensure the file wasn't empty
                 if (isset($component->machine_name)) {
                   $entity = entity_create('webcomponent', (array)$component);
-                  $entity->save();
+                  entity_save('webcomponent', $entity);
                 }
               }
             }
@@ -367,38 +340,13 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
 }
 
 /**
- * Add webcomponent to the header of the site so it can work.
- */
-function _webcomponents_add_to_head($component, $weight = 0, $hashSize = FALSE) {
-  // generate filename hash based on the size of the file
-  // this is a quick and dirty way to do invalidation when it updates without local cache refreshes client side
-  if (file_exists(BACKDROP_ROOT . '/' . $component->file)) {
-    if ($hashSize) {
-      $hash = '?h' . filesize(BACKDROP_ROOT . '/' . $component->file);
-    }
-    else {
-      $hash = '';
-    }
-    $element = array(
-      '#tag' => 'link', // The #tag is the html tag
-      '#attributes' => array( // Set up an array of attributes inside the tag
-        'href' => _webcomponents_base_path() . $component->file . $hash,
-        'rel' => 'import',
-      ),
-      '#weight' => $weight,
-    );
-    backdrop_add_html_head($element, 'webcomponent-' . $component->machine_name);
-  }
-}
-
-/**
  * Get path and allow people to override it, this helps with supporting
  * CDNs and other things.
  */
 function _webcomponents_base_path() {
   $path = base_path();
   // allow other developers to modify this from base path to another directory
-  backdrop_alter('webcomponents_base_path', $path);
+  drupal_alter('webcomponents_base_path', $path);
   return $path;
 }
 
@@ -410,17 +358,17 @@ function _webcomponents_base_path() {
  */
 function _webcomponents_build_registry() {
   $formats = module_invoke_all('register_component_format');
-  backdrop_alter('register_component_format', $formats);
+  drupal_alter('register_component_format', $formats);
   return $formats;
 }
 
 /**
- * Assembles components available to Backdrop.
+ * Assembles components available to Drupal.
  * @return array files where components live
  */
 function webcomponents_load_webcomponents_files() {
   $componentfiles = module_invoke_all('webcomponents');
-  backdrop_alter('webcomponents', $components);
+  drupal_alter('webcomponents', $components);
   return $componentfiles;
 }
 
@@ -435,11 +383,12 @@ function webcomponent_load_by_name($name) {
   $result = $query
   ->entityCondition('entity_type', 'webcomponent')
   ->propertyCondition('machine_name', $name)
+  ->range(0, 1)
   ->execute();
   // flip the results if it found them
   if (isset($result['webcomponent'])) {
     $tmp = array_pop($result['webcomponent']);
-    $entity = entity_load('webcomponent', $tmp->wid);
+    $entity = entity_load_single('webcomponent', $tmp->wid);
   }
   return $entity;
 }
@@ -459,7 +408,7 @@ function _webcomponents_find_includes($dir, $ignore = array(), $find = '.js') {
   $ignore[] = 'demo';
   if (is_dir($dir)) {
     // step into the polymer directory and find all html templates
-    $di = new DirectoryIterator(BACKDROP_ROOT . '/' . $dir);
+    $di = new DirectoryIterator(DRUPAL_ROOT . '/' . $dir);
     foreach ($di as $fileinfo) {
       $fname = $fileinfo->getFilename();
       // check for our find value skipping ignored values
@@ -496,7 +445,7 @@ function _webcomponents_find_includes($dir, $ignore = array(), $find = '.js') {
  */
 function webcomponents_webcomponent_attached_files_alter(&$files) {
   $libraries = libraries_get_libraries();
-  $configfile = BACKDROP_ROOT . '/' . $libraries['webcomponents'] . '/webcomponents.json';
+  $configfile = DRUPAL_ROOT . '/' . $libraries['webcomponents'] . '/webcomponents.json';
   // support for a webcomponents.json file to tell us what to append
   if (file_exists($configfile)) {
     $file = file_get_contents($configfile);
