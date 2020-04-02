@@ -14,7 +14,7 @@ function webcomponents_menu() {
   $items['admin/config/content/webcomponents'] = array(
     'title' => 'Web components',
     'description' => 'Settings for basic customizations to web components.',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('webcomponents_admin_settings'),
     'type' => MENU_NORMAL_ITEM,
     'access arguments' => array('administer site configuration'),
@@ -67,13 +67,13 @@ function webcomponents_process_html(&$variables) {
   }
   $wc = new WebComponentsService();
   $markup = $wc->applyWebcomponents($buildLocation, $location);
-  drupal_alter('webcomponents_build_integration_markup', $markup);
+  backdrop_alter('webcomponents_build_integration_markup', $markup);
   // load webcomponentsjs polyfill library if it exists
   $element = array(
     '#type' => 'markup',
     '#markup' => $markup,
   );
-  $variables['page_bottom'] .= drupal_render($element);
+  $variables['page_bottom'] .= backdrop_render($element);
 }
 
 /**
@@ -150,7 +150,7 @@ function _webcomponents_render_component($component) {
     }
     // allow other projects to add onto and modify the webcomponent before it renders
     // useful for tag wrapping for systems like HAX
-    drupal_alter('webcomponent_render', $vars, $component);
+    backdrop_alter('webcomponent_render', $vars, $component);
     $output = theme('webcomponent', $vars);
     return $output;
   }
@@ -176,7 +176,7 @@ function webcomponents_theme() {
       ),
       'render element' => 'element',
       'template' => 'webcomponent',
-      'path' => drupal_get_path('module', 'webcomponents') . '/templates',
+      'path' => backdrop_get_path('module', 'webcomponents') . '/templates',
     ),
   );
 }
@@ -245,7 +245,7 @@ function webcomponents_entity_load($entities, $type) {
  * @return array array of entities or empty.
  */
 function webcomponents_load_all($force_rebuild = FALSE) {
-  $entities = &drupal_static(__FUNCTION__);
+  $entities = &backdrop_static(__FUNCTION__);
   // @ignore druplart_conditional_assignment
   if (!$entities) {
     if (!$force_rebuild && $cached = cache_get('webcomponents')) {
@@ -310,7 +310,7 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
                   // see if any aspects changed
                   if ($key != 'file' && isset($entity->{$key}) && $entity->{$key} != $value) {
                     if (!$hide_messages && !variable_get('webcomponents_hide_messages', FALSE)) {
-                      drupal_set_message(t('Web components have changed! Make sure that your attributes are correctly reflected in your site. @key changed on @machine from @old to @new', array('@key' => $key, '@old' => serialize($entity->{$key}), '@new' => serialize($value), '@machine' => $component->machine_name)), 'warning', TRUE);
+                      backdrop_set_message(t('Web components have changed! Make sure that your attributes are correctly reflected in your site. @key changed on @machine from @old to @new', array('@key' => $key, '@old' => serialize($entity->{$key}), '@new' => serialize($value), '@machine' => $component->machine_name)), 'warning', TRUE);
                     }
                     $entity->{$key} = $value;
                   }
@@ -346,7 +346,7 @@ function _webcomponents_rebuild($hide_messages = FALSE) {
 function _webcomponents_base_path() {
   $path = base_path();
   // allow other developers to modify this from base path to another directory
-  drupal_alter('webcomponents_base_path', $path);
+  backdrop_alter('webcomponents_base_path', $path);
   return $path;
 }
 
@@ -358,17 +358,17 @@ function _webcomponents_base_path() {
  */
 function _webcomponents_build_registry() {
   $formats = module_invoke_all('register_component_format');
-  drupal_alter('register_component_format', $formats);
+  backdrop_alter('register_component_format', $formats);
   return $formats;
 }
 
 /**
- * Assembles components available to Drupal.
+ * Assembles components available to backdrop.
  * @return array files where components live
  */
 function webcomponents_load_webcomponents_files() {
   $componentfiles = module_invoke_all('webcomponents');
-  drupal_alter('webcomponents', $components);
+  backdrop_alter('webcomponents', $components);
   return $componentfiles;
 }
 
@@ -408,7 +408,7 @@ function _webcomponents_find_includes($dir, $ignore = array(), $find = '.js') {
   $ignore[] = 'demo';
   if (is_dir($dir)) {
     // step into the polymer directory and find all html templates
-    $di = new DirectoryIterator(DRUPAL_ROOT . '/' . $dir);
+    $di = new DirectoryIterator(BACKDROP_ROOT . '/' . $dir);
     foreach ($di as $fileinfo) {
       $fname = $fileinfo->getFilename();
       // check for our find value skipping ignored values
@@ -445,7 +445,7 @@ function _webcomponents_find_includes($dir, $ignore = array(), $find = '.js') {
  */
 function webcomponents_webcomponent_attached_files_alter(&$files) {
   $libraries = libraries_get_libraries();
-  $configfile = DRUPAL_ROOT . '/' . $libraries['webcomponents'] . '/webcomponents.json';
+  $configfile = BACKDROP_ROOT . '/' . $libraries['webcomponents'] . '/webcomponents.json';
   // support for a webcomponents.json file to tell us what to append
   if (file_exists($configfile)) {
     $file = file_get_contents($configfile);
