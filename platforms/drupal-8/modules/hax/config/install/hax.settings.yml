@@ -1,9 +1,10 @@
 hax_autoload_element_node_view: true
 hax_project_location: 'https://cdn.webcomponents.psu.edu/cdn/'
 hax_project_location_other: ''
+hax_project_local_build_file: false
 hax_blox: ''
 hax_stax: ''
-hax_autoload_element_list: 'oer-schema lrn-aside grid-plate tab-list magazine-cover video-player image-compare-slider license-element self-check multiple-choice lrn-table hero-banner task-list media-image lrndesign-blockquote meme-maker a11y-gif-player paper-audio-player wikipedia-query lrn-vocab lrn-math person-testimonial citation-element code-editor place-holder stop-note q-r wave-player'
+hax_autoload_element_list: 'oer-schema lrn-aside grid-plate tab-list magazine-cover video-player image-compare-slider license-element self-check multiple-choice lrn-table hero-banner task-list media-image lrndesign-blockquote meme-maker a11y-gif-player paper-audio-player wikipedia-query lrn-vocab lrn-math person-testimonial citation-element place-holder stop-note q-r'
 hax_youtube_key: ''
 hax_memegenerator_key: ''
 hax_vimeo_key: ''

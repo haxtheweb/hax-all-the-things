@@ -45,7 +45,7 @@ function hax_preprocess_field(&$vars) {
     // prefix/suffix due to filtering. This will go through the node's selected
     // text format for render.
     // @todo: convert to string replacement function or template.
-    $vars['items'][0]['content']['#text'] = '<cms-hax redirect-location="' . $redirect . '" open-default="open-default" end-point="' . base_path() . 'hax-node-save/' . $node_id . '/' . \Drupal::csrfToken()
+    $vars['items'][0]['content']['#text'] = '<style>hax-tray { z-index:1251;}</style><cms-hax redirect-location="' . $redirect . '" open-default="open-default" end-point="' . base_path() . 'hax-node-save/' . $node_id . '/' . \Drupal::csrfToken()
         ->get() . '" app-store-connection=' . "'" . $appStoreConnection . "'" . '><template>'
      . $vars['items'][0]['content']['#text'] . '</template></cms-hax>';
 
@@ -283,6 +283,6 @@ class WebComponentsService {
       window.__appForceUpgrade=' . $forceUpgrade . ';
     </script>
     <script src="' . $directory . 'build.js"></script>  
-    <style>hax-tray { z-index:1251;}</style>';
+    ';
   }
 }
