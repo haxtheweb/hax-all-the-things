@@ -241,6 +241,11 @@ function hax_page_bottom(array &$page_bottom) {
     '#template' => '{{ somecontent|raw }}',
     '#context' => [
       'somecontent' => $wc->applyWebcomponents($buildLocation, $location)
+    ],
+    '#attached' => [
+      'library' => [
+        'hax/webcomponents-behaviors' => 'hax/webcomponents-behaviors'
+      ]
     ]
   ];
 }
@@ -278,11 +283,7 @@ class WebComponentsService {
    */
   public function getBuild($directory  = '/', $forceUpgrade = "false", $cdn = '/') {
     return '
-    <script>
-      window.__appCDN="' . $cdn . '";
-      window.__appForceUpgrade=' . $forceUpgrade . ';
-    </script>
-    <script src="' . $directory . 'build.js"></script>  
-    ';
+    <script>window.__appCDN="' . $cdn . '";window.__appForceUpgrade=' . $forceUpgrade . ';</script>
+    <script src="' . $directory . 'build.js"></script>';
   }
 }

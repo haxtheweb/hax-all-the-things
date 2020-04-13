@@ -9,5 +9,5 @@ configure = admin/config/content/webcomponents
 
 ; Added by Backdrop CMS packaging script on 2020-04-02
 project = webcomponents
-version = 1.x-3.6.0
+version = 1.x-3.8.0
 timestamp = 1564765040

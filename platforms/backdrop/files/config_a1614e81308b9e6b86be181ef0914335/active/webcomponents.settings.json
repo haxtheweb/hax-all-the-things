@@ -1,5 +1,5 @@
 {
     "_config_name": "webcomponents.settings",
-    "webcomponents_project_location": "https://cdn.webcomponents.psu.edu/cdn/",
+    "webcomponents_project_location": "sites/all/libraries/webcomponents/",
     "webcomponents_project_location_other": ""
 }

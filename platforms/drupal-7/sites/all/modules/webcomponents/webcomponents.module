@@ -47,7 +47,13 @@ function webcomponents_admin_settings($form, &$form_state) {
   ];
   return system_settings_form($form);
 }
-
+/**
+ * Implements hook_page_build().
+ */
+function webcomponents_page_build(&$page) {
+  // load in drupal specific behaviors to match our amazing build integration element
+  drupal_add_js(drupal_get_path('module', 'webcomponents') . '/webcomponents-behaviors.js');
+}
 /**
  * Implements hook_process_html().
  */
