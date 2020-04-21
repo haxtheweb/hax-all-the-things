@@ -57,7 +57,7 @@ class HaxSettings extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $config = $this->config('hax.settings');
-    $form['hax_element_to_do_the_work'] = [
+    $form['hax_element'] = [
       '#type' => 'inline_template',
       '#template' => '{{ somecontent|raw }}',
       '#context' => [

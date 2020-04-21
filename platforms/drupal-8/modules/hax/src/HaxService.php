@@ -2,7 +2,7 @@
 
 namespace Drupal\hax;
 
-class HAXService {
+class HaxService {
   /**
    * returns an array of app store definitions based
    * on passing in the apikeys for the ones we have

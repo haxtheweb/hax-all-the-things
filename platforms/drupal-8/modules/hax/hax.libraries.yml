@@ -1,3 +1,7 @@
 webcomponents-behaviors:
   js:
     js/webcomponents-behaviors.js: {}
+hax-form-helper:
+  js:
+    js/hax-form-helper.js: {}
+    

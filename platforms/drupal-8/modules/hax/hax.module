@@ -87,7 +87,7 @@ function hax_hax_blox() {
   // account for no setting so we at least have SOMETHING
   // for those initially using the editor
   if (!$blox || $blox == '') {
-    $hax = new HAXService();
+    $hax = new HaxService();
     $blox = $hax->loadBaseBlox();
   }
   return $blox;
@@ -102,7 +102,7 @@ function hax_hax_stax() {
   // account for no setting so we at least have SOMETHING
   // for those initially using the editor
   if (!$stax || $stax == '') {
-    $hax = new HAXService();
+    $hax = new HaxService();
     $stax = $hax->loadBaseStax();
   }
   return $stax;
@@ -248,6 +248,15 @@ function hax_page_bottom(array &$page_bottom) {
       ]
     ]
   ];
+}
+
+/**
+ * Alter the form so that we can easily integrate our singular element form w/ Drupal
+ */
+function hax_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if (isset($form['#attributes']['class'][0]) && $form['#attributes']['class'][0] == 'hax-settings') {
+    $form['#attached']['library'][] = 'hax/hax-form-helper';
+  }
 }
 
 
