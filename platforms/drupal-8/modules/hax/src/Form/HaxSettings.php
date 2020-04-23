@@ -37,7 +37,7 @@ class HaxSettings extends ConfigFormBase {
           $value = json_encode($hax->loadBaseStax());
         }
         else if (json_decode($value) === NULL) {
-          $value = '[]';
+          $value = '{}';
         }
       }
       $config->set($variable, $value);
@@ -55,36 +55,37 @@ class HaxSettings extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-
+    $endpoint = base_path() . 'hax-element-list-selector-data/' . \Drupal::csrfToken()->get('hax-element-list-selector-data');
     $config = $this->config('hax.settings');
     $form['hax_element'] = [
       '#type' => 'inline_template',
       '#template' => '{{ somecontent|raw }}',
       '#context' => [
-        'somecontent' => '<hax-element-list-selector></hax-element-list-selector>',
+        'somecontent' => '<hax-element-list-selector fields-endpoint="' . $endpoint . '"></hax-element-list-selector>',
       ],
     ];
     $form['hax_project_location'] = [
-      '#type' => 'select',
+      '#type' => 'hidden',
       '#title' => $this->t('Webcomponents Location'),
       '#default_value' => $config->get('hax_project_location'),
-      '#options' => array(
-        'https://cdn.webcomponents.psu.edu/cdn/' => 'Penn State CDN',
-        'https://cdn.waxam.io/' => 'Waxam CDN',
-        'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
-        'other' => $this->t('Other'),
-      ),
       '#description' => $this->t("Use this to point to CDNs or if you've installed your web components some place else. Start without a slash and end with a slash."),
     ];
     $form['hax_project_location_other'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => $this->t('Other Location'),
       '#default_value' => $config->get('hax_project_location_other'),
       '#maxlength' => 1000,
       '#description' => $this->t("Only use this if you need to use a source other than the above supported options."),
     ];
+    $form['hax_project_pk'] = [
+      '#type' => 'hidden',
+      '#title' => $this->t('Public key'),
+      '#default_value' => $config->get('hax_project_pk'),
+      '#maxlength' => 1000,
+      '#description' => $this->t("Only used by some providers"),
+    ];
     $form['hax_autoload_element_list'] = [
-      '#type' => 'textarea',
+      '#type' => 'hidden',
       '#title' => $this->t('Elements to autoload'),
       '#default_value' => $config->get('hax_autoload_element_list'),
       '#description' => $this->t("This allows for auto-loading elements known to play nice with HAX. If you've written any webcomponents that won't automatically be loaded into the page via that module this allows you to attempt to auto-load them when HAX loads. For example, if you have a video-player element in your bower_components directory and want it to load on this interface, this would be a simple way to do that. Spaces only between elements, no comma"),
@@ -96,7 +97,7 @@ class HaxSettings extends ConfigFormBase {
       $blox = json_encode($hax->loadBaseBlox());
     }
     $form['hax_blox'] = [
-      '#type' => 'textarea',
+      '#type' => 'hidden',
       '#title' => $this->t('Blox schema'),
       '#default_value' => $blox,
       '#description' => $this->t("This occupies the "),
@@ -106,7 +107,7 @@ class HaxSettings extends ConfigFormBase {
       $stax = json_encode($hax->loadBaseStax());
     }
     $form['hax_stax'] = [
-      '#type' => 'textarea',
+      '#type' => 'hidden',
       '#title' => $this->t('Stax schema'),
       '#default_value' => $stax,
       '#description' => $this->t("This occupies the "),
@@ -115,7 +116,7 @@ class HaxSettings extends ConfigFormBase {
     $baseApps = $hax->baseSupportedApps();
     foreach ($baseApps as $key => $app) {
       $form['hax_' . $key . '_key'] = [
-        '#type' => 'textfield',
+        '#type' => 'hidden',
         '#title' => $this->t('@name API key', [
           '@name' => $app['name'],
         ]),

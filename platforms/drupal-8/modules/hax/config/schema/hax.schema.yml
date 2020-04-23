@@ -6,6 +6,10 @@ hax.settings:
       type: string
     hax_project_location_other:
       type: string
+    hax_project_pk:
+      type: string
+    hax_custom_appstore:
+      type: string
     hax_project_local_build_file:
       type: boolean
     hax_autoload_element_node_view:

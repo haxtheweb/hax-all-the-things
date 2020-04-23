@@ -5,8 +5,8 @@
  * Headless Authoring eXperience, accept calls and make things haxable.
  */
 
-use Drupal\hax\HaxService;
 use Drupal\Core\Site\Settings;
+use Drupal\hax\HaxService;
 
 /**
  * Implements hook_preprocess_hook().
@@ -15,7 +15,6 @@ use Drupal\Core\Site\Settings;
  */
 function hax_preprocess_field(&$vars) {
 
-  // Supporting attachments handled in hax_page_attachments().
   // Allow for cache variability based on route name so this can be handled
   // evaluated separately for the view and the hax mode tabs.
   $vars['#cache']['contexts'][] = 'route.name';
@@ -29,9 +28,18 @@ function hax_preprocess_field(&$vars) {
   // @todo we could do this to other things too but this is the piece that forces it to body only
   if ($vars['field_name'] == 'body' && $entity_type == 'node' && $view_mode == 'full'
     && \Drupal::config('hax.settings')->get('hax_autoload_element_node_view')) {
-    $appStoreConnection = json_encode([
-      'url' => base_path() . 'hax-app-store/' . \Drupal::csrfToken()->get('hax-app-store'),
-    ]);
+    // support for custom appstore endpoints. This is "you know what the hell your doing" mode and
+    // Drupal is really just a singular destination, not the final one.
+    if (Drupal::config('hax.settings')->get('hax_custom_appstore') != '') {
+      $appStoreConnection = json_encode([
+        'url' => Drupal::config('hax.settings')->get('hax_custom_appstore'),
+      ]);
+    }
+    else {
+      $appStoreConnection = json_encode([
+        'url' => base_path() . 'hax-app-store/' . \Drupal::csrfToken()->get('hax-app-store'),
+      ]);
+    }
 
     // Get the NID from current path.
     $request = \Drupal::request();
@@ -50,7 +58,6 @@ function hax_preprocess_field(&$vars) {
      . $vars['items'][0]['content']['#text'] . '</template></cms-hax>';
 
   }
-
 }
 
 /**
@@ -116,9 +123,7 @@ function hax_hax_autoloader() {
   $autoloaderstring = \Drupal::config('hax.settings')
     ->get('hax_autoload_element_list');
   // Blow up based on space.
-  $autoloader = explode(' ', $autoloaderstring);
-  // these must be on here
-  array_push($autoloader,'cms-token', 'cms-views', 'cms-block', 'cms-entity');
+  $autoloader = json_decode($autoloaderstring);
   return $autoloader;
 }
 
@@ -213,6 +218,45 @@ function _hax_site_connection() {
     }
   }';
   return $json;
+}
+
+function hax_page_attachments_alter(array &$page) {
+  $tags = array(
+    'https://fonts.googleapis.com',
+    'https://cdnjs.cloudflare.com',
+    'https://i.creativecommons.org',
+    'https://licensebuttons.net'
+  );
+  $config = \Drupal::config('hax.settings');
+  $base = $config->get('hax_project_location');
+  if ($config->get('hax_project_location') != 'sites/all/libraries/webcomponents/') {
+    $tags[] = $config->get('hax_project_location');
+  }
+  else if ($config->get('hax_project_location') == 'sites/all/libraries/webcomponents/') {
+    $base = base_path() . $config->get('hax_project_location');
+  }
+  foreach ($tags as $key => $src) {
+    $tag = array(
+      '#type' => 'html_tag',
+      '#tag' => 'link',
+      '#attributes' => array(
+        'rel' => 'preconnect',
+        'crossorigin' => true,
+        'href' => $src,
+      ),
+    );
+    $page['#attached']['html_head'][] = [$tag, 'hax-tag-' . $key];
+  }
+  $tag = array(
+    '#type' => 'html_tag',
+    '#tag' => 'link',
+    '#attributes' => array(
+      'rel' => 'preload',
+      'as' => 'script',
+      'href' => $base . 'build.js',
+    ),
+  );
+  $page['#attached']['html_head'][] = [$tag, 'hax-preload'];
 }
 
 /**

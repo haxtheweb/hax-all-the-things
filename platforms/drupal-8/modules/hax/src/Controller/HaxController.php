@@ -8,6 +8,7 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\node\Controller\NodeViewController;
 use Drupal\node\NodeInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Drupal\hax\HaxService;
 
 /**
  * Defines a controller to render a single node in HAX Mode.
@@ -237,6 +238,11 @@ class HaxController extends NodeViewController {
       // Add/alter layouts.
       $autoloaderList = \Drupal::moduleHandler()->invokeAll('hax_autoloader');
       \Drupal::moduleHandler()->alter('hax_autoloader', $autoloaderList);
+      foreach ($autoloaderList as $ary => $values) {
+        foreach ($values as $key => $value) {
+          $autoloader[$key] = $value;
+        }
+      }
       // Add/alter templates. For reference, see appstore.json in
       $staxList = \Drupal::moduleHandler()->invokeAll('hax_stax');
       \Drupal::moduleHandler()->alter('hax_stax', $staxList);
@@ -253,9 +259,281 @@ class HaxController extends NodeViewController {
         'apps' => $appStore,
         'stax' => $staxList,
         'blox' => $bloxList,
-        'autoloader' => $autoloaderList,
+        'autoloader' => $autoloader,
       ]));
 
+      return $response;
+    }
+
+    // "Unauthorized" response.
+    $response = new Response();
+    $response->setStatusCode(403);
+
+    return $response;
+  }
+
+  /**
+   * Load registration definitions
+   *
+   * @param mixed $token
+   *   CSRF security token.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   The http response.
+   */
+  public function loadHaxElementListSelectorData($token) {
+    // Ensure we had data PUT here and it is valid.
+    if (\Drupal::csrfToken()->validate($token, 'hax-element-list-selector-data')) {
+      $config = \Drupal::config('hax.settings');
+      $hax = new HaxService();
+      $apikeys = [];
+      $baseApps = $hax->baseSupportedApps();
+      foreach ($baseApps as $key => $app) {
+        if ($config->get('hax_' . $key . '_key') != '') {
+          $apikeys['haxcore-integrations-' . $key] = $config->get('hax_' . $key . '_key');
+        }
+      }
+      $data = json_decode('{
+        "fields": [
+          {
+            "property": "haxcore",
+            "inputMethod": "tabs",
+            "properties": [
+              {
+                "property": "providers",
+                "title": "Providers",
+                "description": "Providers of functionality",
+                "properties": [
+                  {
+                    "property": "haxcore-providers-cdn",
+                    "title": "CDN",
+                    "description": "Content delivery network that supplies your elements and HAX definitions",
+                    "inputMethod": "select",
+                    "options": {
+                      "https://cdn.webcomponents.psu.edu/cdn/": "Penn State CDN",
+                      "https://cdn.waxam.io/": "WaxaM CDN",
+                      "sites/all/libraries/webcomponents/": "Local libraries folder (sites/all/libraries/webcomponents/)",
+                      "other": "Other location"
+                    }
+                  },
+                  {
+                    "property": "haxcore-providers-other",
+                    "title": "Other",
+                    "description": "Entrypoint for the cdn / required files for a provider",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-providers-pk",
+                    "title": "Public key",
+                    "description": "Public key, required by some providers",
+                    "inputMethod": "textfield"
+                  }
+                ]
+              },
+              {
+                "property": "search",
+                "title": "HAX Elements",
+                "properties": [
+                  {
+                    "property": "haxcore-search-search",
+                    "title": "Search",
+                    "description": "Filter elements by name",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-search-tags",
+                    "title": "Tags",
+                    "description": "Tags to filter on",
+                    "inputMethod": "select",
+                    "options": {
+                      "": "",
+                      "Video": "Video",
+                      "Image": "Image",
+                      "Media": "Media",
+                      "Card": "Card",
+                      "Content": "Content",
+                      "Table": "Table",
+                      "Layout": "Layout",
+                      "Presentation": "Presentation",
+                      "Data": "Data",
+                      "Education": "Education",
+                      "Funny": "Funny"
+                    }
+                  },
+                  {
+                    "property": "haxcore-search-hasdemo",
+                    "title": "Has demo",
+                    "description": "Only show elements with demos",
+                    "inputMethod": "boolean"
+                  },
+                  {
+                    "property": "haxcore-search-columns",
+                    "title": "Columns",
+                    "description": "Columns to organize the results into",
+                    "inputMethod": "select",
+                    "options": {
+                      "2": "2 Columns",
+                      "3": "3 Columns",
+                      "4": "4 Columns",
+                      "5": "5 Columns"
+                    }
+                  }
+                ]
+              },
+              {
+                "property": "templates",
+                "title": "Templates / Layouts",
+                "description": "Manage groups of templates and layouts",
+                "properties": [
+                  {
+                    "property": "haxcore-templates-templates",
+                    "title": "Templates",
+                    "description": "Stax version of HAXElementSchema",
+                    "inputMethod": "markup"
+                  },
+                  {
+                    "property": "haxcore-templates-layouts",
+                    "title": "Layouts",
+                    "description": "Blox version of HAXElementSchema",
+                    "inputMethod": "markup"
+                  }
+                ]
+              },
+              {
+                "property": "integrations",
+                "title": "Integrations",
+                "description": "API keys and integrations with other services",
+                "properties": [
+                  {
+                    "property": "haxcore-integrations-youtube",
+                    "title": "Youtube",
+                    "description": "https://developers.google.com/youtube/v3/getting-started",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-integrations-googlepoly",
+                    "title": "Google Poly",
+                    "description": "https://developers.google.com/youtube/v3/getting-started",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-integrations-memegenerator",
+                    "title": "Meme generator",
+                    "description": "https://memegenerator.net/Api",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-integrations-vimeo",
+                    "title": "Vimeo",
+                    "description": "https://developer.vimeo.com/",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-integrations-giphy",
+                    "title": "Giphy",
+                    "description": "https://developers.giphy.com/docs/",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-integrations-unsplash",
+                    "title": "Unsplash",
+                    "description": "https://unsplash.com/developers",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-integrations-flickr",
+                    "title": "Flickr",
+                    "description": "https://www.flickr.com/services/developer/api/",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-integrations-pixabay",
+                    "title": "Pixabay",
+                    "description": "https://pixabay.com/api/docs/",
+                    "inputMethod": "textfield"
+                  }
+                ]
+              },
+              {
+                "property": "providerdetails",
+                "title": "Provider details",
+                "description": "Detailing the functionality provided by this provider",
+                "properties": [
+                  {
+                    "property": "haxcore-providerdetails-name",
+                    "title": "Name",
+                    "description": "Content delivery network that supplies your elements and HAX definitions",
+                    "inputMethod": "textfield"
+                  },
+                  {
+                    "property": "haxcore-providerdetails-haxtags",
+                    "title": "HAX editable tags",
+                    "description": "Tags that extend HAX editor",
+                    "inputMethod": "markup"
+                  },
+                  {
+                    "property": "haxcore-providerdetails-othertags",
+                    "title": "Other web components",
+                    "description": "Valid tags discovered that don\'t provide HAX wiring, useful for building other applications",
+                    "inputMethod": "markup"
+                  }
+                ]
+              },
+              {
+                "property": "help",
+                "title": "Help",
+                "description": "Help info and how to get started",
+                "properties": [
+                  {
+                    "property": "haxcore-help-docs",
+                    "title": "Documentation",
+                    "description": "Help using HAX and related projects",
+                    "inputMethod": "md-block"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "value": {
+          "haxcore": {
+            "providers": {
+              "haxcore-providers-cdn": "' . $config->get('hax_project_location') . '",
+              "haxcore-providers-other": "' . $config->get('hax_project_location_other') . '",
+              "haxcore-providers-pk": "' . $config->get('hax_project_pk') . '"
+            },
+            "search": {
+              "haxcore-search-search": "",
+              "haxcore-search-tags": "",
+              "haxcore-search-hasdemo": false,
+              "haxcore-search-columns": "",
+              "haxcore-search-autoloader": ' . $config->get('hax_autoload_element_list') . '
+            },
+            "templates": {
+              "haxcore-templates-templates": ' . json_encode($config->get('hax_stax')) . ',
+              "haxcore-templates-layouts": ' . json_encode($config->get('hax_blox')) . '
+            },
+            "integrations": ' . json_encode($apikeys) . ',
+            "providerdetails": {
+              "haxcore-providerdetails-name": "",
+              "haxcore-providerdetails-haxtags": "",
+              "haxcore-providerdetails-othertags": ""
+            },
+            "help": {
+              "haxcore-help-docs": "https://raw.githubusercontent.com/elmsln/HAXcms/master/HAXDocs.md"
+            }
+          }
+        }
+      }');
+      
+      // Send the Response object with Apps and StaxList.
+      $response = new Response();
+      $response->headers->set('Content-Type', 'application/json');
+      $response->setStatusCode(200);
+      $response->setContent(json_encode([
+        'status' => 200,
+        'data' => $data,
+      ]));
       return $response;
     }
 

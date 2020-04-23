@@ -19,6 +19,12 @@ hax.load_app_store:
     _controller: '\Drupal\hax\Controller\HaxController::loadAppStore'
   requirements:
     _permission: 'use hax'
+hax.hax_element_list_selector_data:
+  path: '/hax-element-list-selector-data/{token}'
+  defaults:
+    _controller: '\Drupal\hax\Controller\HaxController::loadHaxElementListSelectorData'
+  requirements:
+    _permission: 'administer hax'
 hax.node_form:
   path: '/node/{node}/hax'
   defaults:

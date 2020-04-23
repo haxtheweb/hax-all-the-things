@@ -1,3 +1,6 @@
+'administer hax':
+  title: 'Administer HAX'
+  description: 'Modify settings in the administration / configuration area.'
 'use hax':
   title: 'Use HAX block editor'
   description: 'Allow users to edit using the HAX web component based block editor.'
