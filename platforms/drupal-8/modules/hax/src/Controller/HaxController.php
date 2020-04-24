@@ -377,6 +377,11 @@ class HaxController extends NodeViewController {
                       "4": "4 Columns",
                       "5": "5 Columns"
                     }
+                  },
+                  {
+                    "property": "haxcore-search-autoloader",
+                    "inputMethod": "object",
+                    "format": "cardlist"
                   }
                 ]
               },
