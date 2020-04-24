@@ -231,7 +231,7 @@ function _hax_site_connection() {
 }
 
 function hax_page_attachments_alter(array &$page) {
-  $tags = array(
+  $preconnect = array(
     'https://fonts.googleapis.com',
     'https://cdnjs.cloudflare.com',
     'https://i.creativecommons.org',
@@ -240,33 +240,56 @@ function hax_page_attachments_alter(array &$page) {
   $config = \Drupal::config('hax.settings');
   $base = $config->get('hax_project_location');
   if ($config->get('hax_project_location') != 'sites/all/libraries/webcomponents/') {
-    $tags[] = $config->get('hax_project_location');
+    $preconnect[] = $config->get('hax_project_location');
   }
   else if ($config->get('hax_project_location') == 'sites/all/libraries/webcomponents/') {
     $base = base_path() . $config->get('hax_project_location');
   }
-  foreach ($tags as $key => $src) {
-    $tag = array(
-      '#type' => 'html_tag',
-      '#tag' => 'link',
-      '#attributes' => array(
-        'rel' => 'preconnect',
-        'crossorigin' => true,
-        'href' => $src,
-      ),
-    );
-    $page['#attached']['html_head'][] = [$tag, 'hax-tag-' . $key];
-  }
-  $tag = array(
-    '#type' => 'html_tag',
-    '#tag' => 'link',
-    '#attributes' => array(
-      'rel' => 'preload',
-      'as' => 'script',
-      'href' => $base . 'build.js',
+  $loader = array(
+    "preconnect" => $preconnect,
+    "preload" => array(
+      $base . "build.js",
+      $base . "wc-registry.json",
+      $base . "build/es6/node_modules/web-animations-js/web-animations-next-lite.min.js",
     ),
+    "modulepreload" => array(
+      $base . "build/es6/node_modules/@lrnwebcomponents/wc-autoload/wc-autoload.js",
+      $base . "build/es6/node_modules/@lrnwebcomponents/dynamic-import-registry/dynamic-import-registry.js"
+    )
   );
-  $page['#attached']['html_head'][] = [$tag, 'hax-preload'];
+  foreach ($loader as $rel => $data) {
+    foreach ($data as $key => $src) {
+      $tag = array(
+        '#type' => 'html_tag',
+        '#tag' => 'link',
+        '#attributes' => array(
+          'rel' => $rel,
+          'href' => $src,
+        ),
+      );
+      if ($rel == "preload") {
+        $tag['#attributes']['as'] = 'script';
+        if ($src == $base . "wc-registry.json") {
+          $tag['#attributes']['as'] = 'fetch';
+          $tag['#attributes']['crossorigin'] = "anonymous";
+        }
+      }
+      if ($rel == "modulepreload") {
+        $tag2 = array(
+          '#type' => 'html_tag',
+          '#tag' => 'link',
+          '#attributes' => array(
+            'rel' => "preload",
+            'href' => $src,
+            'as' => "script",
+            'crossorigin' => "anonymous"
+          ),
+        );
+        $page['#attached']['html_head'][] = [$tag2, 'hax-tag2-preload-' . $key];
+      }
+      $page['#attached']['html_head'][] = [$tag, 'hax-tag-' . $rel . $key];
+    }
+  }
 }
 
 /**

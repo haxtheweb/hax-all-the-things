@@ -74,14 +74,12 @@ class HaxSettings extends ConfigFormBase {
       '#type' => 'hidden',
       '#title' => $this->t('Other Location'),
       '#default_value' => $config->get('hax_project_location_other'),
-      '#maxlength' => 1000,
       '#description' => $this->t("Only use this if you need to use a source other than the above supported options."),
     ];
     $form['hax_project_pk'] = [
       '#type' => 'hidden',
       '#title' => $this->t('Public key'),
       '#default_value' => $config->get('hax_project_pk'),
-      '#maxlength' => 1000,
       '#description' => $this->t("Only used by some providers"),
     ];
     $form['hax_autoload_element_list'] = [
