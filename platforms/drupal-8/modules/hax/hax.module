@@ -239,11 +239,11 @@ function hax_page_attachments_alter(array &$page) {
   );
   $config = \Drupal::config('hax.settings');
   $base = $config->get('hax_project_location');
-  if ($config->get('hax_project_location') != 'sites/all/libraries/webcomponents/') {
-    $preconnect[] = $config->get('hax_project_location');
-  }
-  else if ($config->get('hax_project_location') == 'sites/all/libraries/webcomponents/') {
+  if ($config->get('hax_project_location') == 'sites/all/libraries/webcomponents/') {
     $base = base_path() . $config->get('hax_project_location');
+  }
+  else if ($config->get('hax_project_location') != base_path() . 'sites/all/libraries/webcomponents/') {
+    $preconnect[] = $config->get('hax_project_location');
   }
   $loader = array(
     "preconnect" => $preconnect,
@@ -303,9 +303,8 @@ function hax_page_bottom(array &$page_bottom) {
   if ($location == 'other') {
     $location = \Drupal::config('hax.settings')->get('hax_project_location_other');
   }
-  // append base_path if this site has a url to start it
-  if (strpos($location, 'http') === FALSE) {
-    $location = base_path() . $location;
+  if ($location == 'sites/all/libraries/webcomponents/') {
+    $location = base_path() . 'sites/all/libraries/webcomponents/';
   }
   $buildLocation = $location;
   // support for build file to come local but assets via CDN

@@ -312,7 +312,7 @@ class HaxController extends NodeViewController {
                     "options": {
                       "https://cdn.webcomponents.psu.edu/cdn/": "Penn State CDN",
                       "https://cdn.waxam.io/": "WaxaM CDN",
-                      "sites/all/libraries/webcomponents/": "Local libraries folder (sites/all/libraries/webcomponents/)",
+                      "' . base_path() . 'sites/all/libraries/webcomponents/": "Local libraries folder (sites/all/libraries/webcomponents/)",
                       "other": "Other location"
                     }
                   },
