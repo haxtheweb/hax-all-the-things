@@ -1,0 +1,5 @@
+webcomponents.settings:
+  route_name: webcomponents.settings
+  title: Web components
+  description: 'Set CDN / entry point location for web components.'
+  parent: system.admin_config_content

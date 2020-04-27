@@ -1,0 +1,7 @@
+webcomponents.settings:
+  path: /admin/config/content/webcomponents
+  defaults:
+    _title: Web components
+    _form: \Drupal\webcomponents\Form\WebcomponentsSettings
+  requirements:
+    _permission: 'administer site configuration'

@@ -285,9 +285,9 @@ function hax_page_attachments_alter(array &$page) {
             'crossorigin' => "anonymous"
           ),
         );
-        $page['#attached']['html_head'][] = [$tag2, 'hax-tag2-preload-' . $key];
+        $page['#attached']['html_head'][] = [$tag2, 'webcomponents-tag2-preload-' . $key];
       }
-      $page['#attached']['html_head'][] = [$tag, 'hax-tag-' . $rel . $key];
+      $page['#attached']['html_head'][] = [$tag, 'webcomponents-tag-' . $rel . $key];
     }
   }
 }
@@ -311,8 +311,8 @@ function hax_page_bottom(array &$page_bottom) {
   if (\Drupal::config('hax.settings')->get('hax_project_local_build_file')) {
     $buildLocation = base_path() . 'sites/all/libraries/webcomponents/';
   }
-  $wc = new WebComponentsService();
-  $page_bottom['hax'] = [
+  $wc = new HaxWebComponentsService();
+  $page_bottom['webcomponents'] = [
     '#type' => 'inline_template',
     '#template' => '{{ somecontent|raw }}',
     '#context' => [
@@ -356,7 +356,7 @@ function hax_is_current_route_supported() {
 /**
  * Class for implementing web component polyfills and other header aspects in a uniform manner
  */
-class WebComponentsService {
+class HaxWebComponentsService {
   /**
    * This applies all pieces of a standard build appended to the header
    */

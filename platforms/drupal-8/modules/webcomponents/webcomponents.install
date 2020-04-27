@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Web components install hooks.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function webcomponents_install() {
+  \Drupal::messenger()->addStatus(t('To use web components in the body field of content, make sure you have an input filter enabled to allow full HTML or valids custom elements. The default is to serve web components over a CDN but if you want to do your own custom build do https://github.com/elmsln/unbundled-webcomponents'));
+}

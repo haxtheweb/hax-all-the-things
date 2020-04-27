@@ -1,0 +1,10 @@
+webcomponents.settings:
+  type: mapping
+  label: Settings
+  mapping:
+    webcomponents_project_location:
+      type: string
+    webcomponents_project_location_other:
+      type: string
+    webcomponents_project_local_build_file:
+      type: boolean
