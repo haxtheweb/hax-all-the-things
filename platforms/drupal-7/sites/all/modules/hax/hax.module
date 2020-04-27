@@ -124,8 +124,14 @@ function _hax_load_app_store($token) {
     $bloxList = module_invoke_all('hax_blox');
     drupal_alter('hax_blox', $bloxList);
     // pull in autoloader assets
+    $autoloader = array();
     $autoloaderList = module_invoke_all('hax_autoloader');
     drupal_alter('hax_autoloader', $autoloaderList);
+    foreach ($autoloaderList as $ary => $values) {
+      foreach ($values as $key => $value) {
+        $autoloader[$key] = $value;
+      }
+    }
     // send back happy headers
     drupal_add_http_header('Content-Type', 'application/json');
     // define status
@@ -135,7 +141,7 @@ function _hax_load_app_store($token) {
       'apps' => $appStore,
       'stax' => $staxList,
       'blox' => $bloxList,
-      'autoloader' => $autoloaderList,
+      'autoloader' => $autoloader,
     );
     // output the response as json
     print drupal_json_output($return);
@@ -260,26 +266,26 @@ function hax_settings($form, &$form_state) {
     '#markup' => '<hax-element-list-selector fields-endpoint="' . $endpoint . '"></hax-element-list-selector>',
   ];
   $form['webcomponents_project_location'] = [
-    '#type' => 'select',
+    '#type' => 'hidden',
     '#title' => t('Webcomponents Location'),
     '#default_value' => variable_get('webcomponents_project_location', 'https://cdn.webcomponents.psu.edu/cdn/'),
-    '#options' => array(
+    /*'#options' => array(
       'https://cdn.webcomponents.psu.edu/cdn/' => 'Penn State CDN',
       'https://cdn.waxam.io/' => 'Waxam CDN',
       base_path() . 'sites/all/libraries/webcomponents/' => 'Local libraries folder (sites/all/libraries/webcomponents/)',
       'other' => t('Other'),
-    ),
+    ),*/
     '#description' => t("Use this to point to CDNs or if you've installed your web components some place else. Start without a slash and end with a slash."),
   ];
   $form['webcomponents_project_location_other'] = [
-    '#type' => 'textfield',
+    '#type' => 'hidden',
     '#title' => t('Other Location'),
     '#default_value' => variable_get('webcomponents_project_location_other', ''),
     '#maxlength' => 1000,
     '#description' => t("Only use this if you need to use a source other than the above supported options."),
   ];
   $form['hax_project_pk'] = [
-    '#type' => 'textfield',
+    '#type' => 'hidden',
     '#title' => t('Public key'),
     '#default_value' => variable_get('hax_project_pk', ''),
     '#maxlength' => 1000,
@@ -287,7 +293,7 @@ function hax_settings($form, &$form_state) {
   ];
   // collapse default state
   $form['hax_autoload_element_list'] = array(
-    '#type' => 'textfield',
+    '#type' => 'hidden',
     '#title' => t('Elements to autoload'),
     '#default_value' => variable_get('hax_autoload_element_list', HAX_DEFAULT_ELEMENTS),
     '#maxlength' => 1000,
@@ -300,9 +306,8 @@ function hax_settings($form, &$form_state) {
   }
   $form['hax_blox'] = [
     '#type' => 'hidden',
-    '#title' => $this->t('Blox schema'),
+    '#title' => t('Blox schema'),
     '#default_value' => $blox,
-    '#description' => $this->t("This occupies the "),
   ];
   $stax = variable_get('hax_stax');
   if (!$stax || $stax == '') {
@@ -310,14 +315,13 @@ function hax_settings($form, &$form_state) {
   }
   $form['hax_stax'] = [
     '#type' => 'hidden',
-    '#title' => $this->t('Stax schema'),
+    '#title' => t('Stax schema'),
     '#default_value' => $stax,
-    '#description' => $this->t("This occupies the "),
   ];
   $baseApps = $hax->baseSupportedApps();
   foreach ($baseApps as $key => $app) {
     $form['hax_' . $key . '_key'] = array(
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('@name API key', array('@name' => $app['name'])),
       '#default_value' => variable_get('hax_' . $key . '_key', ''),
       '#description' => t('See') . ' ' . l(t('@name developer docs', array('@name' => $app['name'])), $app['docs']) . ' ' . t('for details'),

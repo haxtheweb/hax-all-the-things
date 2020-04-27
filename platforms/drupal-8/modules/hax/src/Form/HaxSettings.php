@@ -88,7 +88,6 @@ class HaxSettings extends ConfigFormBase {
       '#default_value' => $config->get('hax_autoload_element_list'),
       '#description' => $this->t("This allows for auto-loading elements known to play nice with HAX. If you've written any webcomponents that won't automatically be loaded into the page via that module this allows you to attempt to auto-load them when HAX loads. For example, if you have a video-player element in your bower_components directory and want it to load on this interface, this would be a simple way to do that. Spaces only between elements, no comma"),
     ];
-    // @todo need to get that JSON editor in here or VS code cause otherwise this is impossible to work with
     $hax = new HaxService();
     $blox = $config->get('hax_blox');
     if (!$blox || $blox == '') {

@@ -1,8 +1,6 @@
 (function ($) {
   $(document).ready(function(){
     document.getElementById('hax-settings').addEventListener('submit', function(e) {
-      e.stopImmediatePropagation();
-      e.preventDefault();
       var values = document.getElementsByTagName('hax-element-list-selector')[0].getAppstoreValues();
       // in-case they are in this place
       if (values.provider) {
