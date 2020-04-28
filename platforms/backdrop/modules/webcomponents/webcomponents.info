@@ -7,7 +7,7 @@ dependencies[] = entity
 dependencies[] = libraries
 configure = admin/config/content/webcomponents
 
-; Added by Backdrop CMS packaging script on 2020-04-02
+; Added by Backdrop CMS packaging script on 2020-04-28
 project = webcomponents
-version = 1.x-3.8.0
-timestamp = 1564765040
+version = 1.x-3.9.0
+timestamp = 1588083661

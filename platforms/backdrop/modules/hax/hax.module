@@ -50,6 +50,13 @@ function hax_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('use hax'),
   );
+  $items['hax-element-list-selector-data/%'] = array(
+    'page callback' => 'loadHaxElementListSelectorData',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+  );
   $items['node/%node/hax'] = array(
     'title' => 'Block editor mode',
     'description' => 'Edit the node with HAX',
@@ -88,6 +95,11 @@ function _hax_load_app_store($token) {
     // pull in autoloader assets
     $autoloaderList = module_invoke_all('hax_autoloader');
     backdrop_alter('hax_autoloader', $autoloaderList);
+    foreach ($autoloaderList as $ary => $values) {
+      foreach ($values as $key => $value) {
+        $autoloader[$key] = $value;
+      }
+    }
     // send back happy headers
     backdrop_add_http_header('Content-Type', 'application/json');
     // define status
@@ -97,7 +109,7 @@ function _hax_load_app_store($token) {
       'apps' => $appStore,
       'stax' => $staxList,
       'blox' => $bloxList,
-      'autoloader' => $autoloaderList,
+      'autoloader' => $autoloader,
     );
     // output the response as json
     print backdrop_json_output($return);
@@ -129,11 +141,7 @@ function hax_hax_stax() {
 function hax_hax_autoloader() {
   $config = config('hax.settings');
   // generate autoload list
-  $autoloaderstring = $config->get('hax_autoload_element_list');
-  // blow up based on space
-  $autoloader = explode(' ', $autoloaderstring);
-  // these must be on here
-  array_push($autoloader,'cms-token', 'cms-views', 'cms-block', 'cms-entity');
+  $autoloader = json_decode($config->get('hax_autoload_element_list'));
   return $autoloader;
 }
 
@@ -142,24 +150,68 @@ function hax_hax_autoloader() {
  * Helper function to make outline designer settings more obvious.
  */
 function hax_settings_form($form, $form_state) {
+  backdrop_add_js(backdrop_get_path('module', 'hax') . '/hax-form-helper.js');
+  $endpoint = base_path() . 'hax-element-list-selector-data/' . backdrop_get_token('hax-element-list-selector-data');
   $config = config('hax.settings');
-  // collapse default state
-  $form['hax_autoload_element_list'] = array(
-    '#type' => 'textfield',
+  $configw = config('webcomponents.settings');
+  $form['hax_element'] = [
+    '#markup' => '<hax-element-list-selector fields-endpoint="' . $endpoint . '"></hax-element-list-selector>',
+  ];
+  $form['webcomponents_project_location'] = [
+    '#type' => 'hidden',
+    '#title' => t('Webcomponents Location'),
+    '#default_value' => $configw->get('webcomponents_project_location'),
+    '#description' => t("Use this to point to CDNs or if you've installed your web components some place else. Start without a slash and end with a slash."),
+  ];
+  $form['webcomponents_project_location_other'] = [
+    '#type' => 'hidden',
+    '#title' => t('Other Location'),
+    '#default_value' => $configw->get('webcomponents_project_location_other'),
+    '#description' => t("Only use this if you need to use a source other than the above supported options."),
+  ];
+  $form['hax_project_pk'] = [
+    '#type' => 'hidden',
+    '#title' => t('Public key'),
+    '#default_value' => $config->get('hax_project_pk'),
+    '#description' => t("Only used by some providers"),
+  ];
+  $form['hax_autoload_element_list'] = [
+    '#type' => 'hidden',
     '#title' => t('Elements to autoload'),
     '#default_value' => $config->get('hax_autoload_element_list'),
-    '#description' => "This allows for auto-loading elements known to play nice with HAX. If you've written any webcomponents that won't automatically be loaded into the page via that module this allows you to attempt to auto-load them when HAX loads. For example, if you have a video-player element in your bower_components directory and want it to load on this interface, this would be a simple way to do that. Spaces only between elements, no comma",
-    '#maxlength' => 1000
-  );
-  $hax = new HAXService();
+    '#description' => t("This allows for auto-loading elements known to play nice with HAX. If you've written any webcomponents that won't automatically be loaded into the page via that module this allows you to attempt to auto-load them when HAX loads. For example, if you have a video-player element in your bower_components directory and want it to load on this interface, this would be a simple way to do that. Spaces only between elements, no comma"),
+  ];
+  $hax = new HaxService();
+  $blox = $config->get('hax_blox');
+  if (!$blox || $blox == '') {
+    $blox = json_encode($hax->loadBaseBlox());
+  }
+  $form['hax_blox'] = [
+    '#type' => 'hidden',
+    '#title' => t('Blox schema'),
+    '#default_value' => $blox,
+    '#description' => t("This occupies the "),
+  ];
+  $stax = $config->get('hax_stax');
+  if (!$stax || $stax == '') {
+    $stax = json_encode($hax->loadBaseStax());
+  }
+  $form['hax_stax'] = [
+    '#type' => 'hidden',
+    '#title' => t('Stax schema'),
+    '#default_value' => $stax,
+    '#description' => t("This occupies the "),
+  ];
+  // plug in all the other API keys for common, complex integrations
   $baseApps = $hax->baseSupportedApps();
   foreach ($baseApps as $key => $app) {
-    $form['hax_' . $key . '_key'] = array(
-      '#type' => 'textfield',
-      '#title' => t('@name API key', array('@name' => $app['name'])),
+    $form['hax_' . $key . '_key'] = [
+      '#type' => 'hidden',
+      '#title' => t('@name API key', [
+        '@name' => $app['name'],
+      ]),
       '#default_value' => $config->get('hax_' . $key . '_key'),
-      '#description' => t('See') . ' ' . l(t('@name developer docs', array('@name' => $app['name'])), $app['docs']) . ' ' . t('for details'),
-    );
+    ];
   }
   // Add a submit button
   $form['actions']['#type'] = 'actions';
@@ -175,8 +227,16 @@ function hax_settings_form($form, $form_state) {
  * Submit handler for module_settings_form().
  */
 function hax_settings_form_submit($form, &$form_state) {
+  $configw = config('webcomponents.settings');
+  $configw->set('webcomponents_project_location', $form_state['values']['webcomponents_project_location']);
+  $configw->set('webcomponents_project_location_other', $form_state['values']['webcomponents_project_location_other']);
+  $configw->save();
+  
   $config = config('hax.settings');
+  $config->set('hax_project_pk', $form_state['values']['hax_project_pk']);
   $config->set('hax_autoload_element_list', $form_state['values']['hax_autoload_element_list']);
+  $config->set('hax_blox', $form_state['values']['hax_blox']);
+  $config->set('hax_stax', $form_state['values']['hax_stax']);
   $hax = new HAXService();
   $baseApps = $hax->baseSupportedApps();
   foreach ($baseApps as $key => $app) {
@@ -305,7 +365,7 @@ function _hax_node_form($node) {
   <cms-hax redirect-location="' . base_path() . 'node/' . $node->nid . '" open-default end-point="' . base_path() . 'hax-node-save/' . $node->nid . '/' . backdrop_get_token('hax') . '" app-store-connection=' . "'" . json_encode($appStoreConnection) . "'" . '>'
   . '<template>' . 
     check_markup($node->body['und'][0]['value'], $node->body['und'][0]['format'])
-  .'</template></cms-hax>';
+  .'</template></cms-hax><style>hax-tray { z-index:1251;}</style>';
   return $content;
 }
 
@@ -409,4 +469,287 @@ function _hax_site_connection() {
     }
   }';
   return $json;
+}
+
+/**
+ * Load registration definitions
+ *
+ * @param mixed $token
+ *   CSRF security token.
+ *
+ * @return
+ *   The http response.
+ */
+function loadHaxElementListSelectorData($token) {
+  // Ensure we had data PUT here and it is valid.
+  if (backdrop_valid_token($token, 'hax-element-list-selector-data')) {
+    $config = config('hax.settings');
+    $configw = config('webcomponents.settings');
+    $hax = new HaxService();
+    $apikeys = [];
+    $baseApps = $hax->baseSupportedApps();
+    foreach ($baseApps as $key => $app) {
+      if ($config->get('hax_' . $key . '_key') != '') {
+        $apikeys['haxcore-integrations-' . $key] = $config->get('hax_' . $key . '_key');
+      }
+    }
+    // need to account for bad data management before
+    $elementList = $config->get('hax_autoload_element_list');
+    if (!json_decode($elementList)) {
+      $elementList = '{"video-player": "@lrnwebcomponents/video-player/video-player.js","grid-plate": "@lrnwebcomponents/grid-plate/grid-plate.js","license-element": "@lrnwebcomponents/license-element/license-element.js","md-block": "@lrnwebcomponents/md-block/md-block.js","meme-maker": "@lrnwebcomponents/meme-maker/meme-maker.js","stop-note": "@lrnwebcomponents/stop-note/stop-note.js","wikipedia-query": "@lrnwebcomponents/wikipedia-query/wikipedia-query.js","cms-token": "@lrnwebcomponents/cms-hax/lib/cms-token.js","lrn-math-controller": "@lrnwebcomponents/lrn-math/lrn-math.js","retro-card": "@lrnwebcomponents/retro-card/retro-card.js","rss-items": "@lrnwebcomponents/rss-items/rss-items.js","self-check": "@lrnwebcomponents/self-check/self-check.js","team-member": "@lrnwebcomponents/team-member/team-member.js"}';
+    }
+    $data = json_decode('{
+      "fields": [
+        {
+          "property": "haxcore",
+          "inputMethod": "tabs",
+          "properties": [
+            {
+              "property": "providers",
+              "title": "Providers",
+              "description": "Providers of functionality",
+              "properties": [
+                {
+                  "property": "haxcore-providers-cdn",
+                  "title": "CDN",
+                  "description": "Content delivery network that supplies your elements and HAX definitions",
+                  "inputMethod": "select",
+                  "options": {
+                    "https://cdn.webcomponents.psu.edu/cdn/": "Penn State CDN",
+                    "https://cdn.waxam.io/": "WaxaM CDN",
+                    "' . base_path() . 'sites/all/libraries/webcomponents/": "Local libraries folder (sites/all/libraries/webcomponents/)",
+                    "other": "Other location"
+                  }
+                },
+                {
+                  "property": "haxcore-providers-other",
+                  "title": "Other",
+                  "description": "Entrypoint for the cdn / required files for a provider",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-providers-pk",
+                  "title": "Public key",
+                  "description": "Public key, required by some providers",
+                  "inputMethod": "textfield"
+                }
+              ]
+            },
+            {
+              "property": "search",
+              "title": "HAX Elements",
+              "properties": [
+                {
+                  "property": "haxcore-search-search",
+                  "title": "Search",
+                  "description": "Filter elements by name",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-search-tags",
+                  "title": "Tags",
+                  "description": "Tags to filter on",
+                  "inputMethod": "select",
+                  "options": {
+                    "": "",
+                    "Video": "Video",
+                    "Image": "Image",
+                    "Media": "Media",
+                    "Card": "Card",
+                    "Content": "Content",
+                    "Table": "Table",
+                    "Layout": "Layout",
+                    "Presentation": "Presentation",
+                    "Data": "Data",
+                    "Education": "Education",
+                    "Funny": "Funny"
+                  }
+                },
+                {
+                  "property": "haxcore-search-hasdemo",
+                  "title": "Has demo",
+                  "description": "Only show elements with demos",
+                  "inputMethod": "boolean"
+                },
+                {
+                  "property": "haxcore-search-columns",
+                  "title": "Columns",
+                  "description": "Columns to organize the results into",
+                  "inputMethod": "select",
+                  "options": {
+                    "2": "2 Columns",
+                    "3": "3 Columns",
+                    "4": "4 Columns",
+                    "5": "5 Columns"
+                  }
+                },
+                {
+                  "property": "haxcore-search-autoloader",
+                  "inputMethod": "object",
+                  "format": "cardlist"
+                }
+              ]
+            },
+            {
+              "property": "templates",
+              "title": "Templates / Layouts",
+              "description": "Manage groups of templates and layouts",
+              "properties": [
+                {
+                  "property": "haxcore-templates-templates",
+                  "title": "Templates",
+                  "description": "Stax version of HAXElementSchema",
+                  "inputMethod": "markup"
+                },
+                {
+                  "property": "haxcore-templates-layouts",
+                  "title": "Layouts",
+                  "description": "Blox version of HAXElementSchema",
+                  "inputMethod": "markup"
+                }
+              ]
+            },
+            {
+              "property": "integrations",
+              "title": "Integrations",
+              "description": "API keys and integrations with other services",
+              "properties": [
+                {
+                  "property": "haxcore-integrations-youtube",
+                  "title": "Youtube",
+                  "description": "https://developers.google.com/youtube/v3/getting-started",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-googlepoly",
+                  "title": "Google Poly",
+                  "description": "https://developers.google.com/youtube/v3/getting-started",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-memegenerator",
+                  "title": "Meme generator",
+                  "description": "https://memegenerator.net/Api",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-vimeo",
+                  "title": "Vimeo",
+                  "description": "https://developer.vimeo.com/",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-giphy",
+                  "title": "Giphy",
+                  "description": "https://developers.giphy.com/docs/",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-unsplash",
+                  "title": "Unsplash",
+                  "description": "https://unsplash.com/developers",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-flickr",
+                  "title": "Flickr",
+                  "description": "https://www.flickr.com/services/developer/api/",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-pixabay",
+                  "title": "Pixabay",
+                  "description": "https://pixabay.com/api/docs/",
+                  "inputMethod": "textfield"
+                }
+              ]
+            },
+            {
+              "property": "providerdetails",
+              "title": "Provider details",
+              "description": "Detailing the functionality provided by this provider",
+              "properties": [
+                {
+                  "property": "haxcore-providerdetails-name",
+                  "title": "Name",
+                  "description": "Content delivery network that supplies your elements and HAX definitions",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-providerdetails-haxtags",
+                  "title": "HAX editable tags",
+                  "description": "Tags that extend HAX editor",
+                  "inputMethod": "markup"
+                },
+                {
+                  "property": "haxcore-providerdetails-othertags",
+                  "title": "Other web components",
+                  "description": "Valid tags discovered that don\'t provide HAX wiring, useful for building other applications",
+                  "inputMethod": "markup"
+                }
+              ]
+            },
+            {
+              "property": "help",
+              "title": "Help",
+              "description": "Help info and how to get started",
+              "properties": [
+                {
+                  "property": "haxcore-help-docs",
+                  "title": "Documentation",
+                  "description": "Help using HAX and related projects",
+                  "inputMethod": "md-block"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "value": {
+        "haxcore": {
+          "providers": {
+            "haxcore-providers-cdn": "' . $configw->get('webcomponents_project_location') . '",
+            "haxcore-providers-other": "' . $configw->get('webcomponents_project_location_other') . '",
+            "haxcore-providers-pk": "' . $config->get('hax_project_pk') . '"
+          },
+          "search": {
+            "haxcore-search-search": "",
+            "haxcore-search-tags": "",
+            "haxcore-search-hasdemo": false,
+            "haxcore-search-columns": "",
+            "haxcore-search-autoloader": ' . $elementList . '
+          },
+          "templates": {
+            "haxcore-templates-templates": ' . json_encode($config->get('hax_stax')) . ',
+            "haxcore-templates-layouts": ' . json_encode($config->get('hax_blox')) . '
+          },
+          "integrations": ' . json_encode($apikeys) . ',
+          "providerdetails": {
+            "haxcore-providerdetails-name": "",
+            "haxcore-providerdetails-haxtags": "",
+            "haxcore-providerdetails-othertags": ""
+          },
+          "help": {
+            "haxcore-help-docs": "https://raw.githubusercontent.com/elmsln/HAXcms/master/HAXDocs.md"
+          }
+        }
+      }
+    }');
+    $status = 200;
+  }
+  else {
+    $data = array();
+    $status = 403;
+  }
+  // send back happy headers
+  backdrop_add_http_header('Content-Type', 'application/json');
+  // define status
+  backdrop_add_http_header('Status', 200);
+  $return = array(
+    'status' => $status,
+    'data' => $data,
+  );
+  // output the response as json
+  print backdrop_json_output($return);
+  exit;
 }
