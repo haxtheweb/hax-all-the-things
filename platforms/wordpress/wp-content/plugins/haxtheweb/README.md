@@ -4,14 +4,17 @@ Bringing the HAX block editor to ClassicPress & WordPress. [HAX](https://haxthew
 ## Dependencies
 - If using WordPress, you'll need to get the [Classic Editor plugin](https://wordpress.org/plugins/classic-editor/)
   - ClassicPress does not have this dependency
+- https://stackoverflow.com/questions/44204307/rest-api-init-event-not-fired
 
 ## Usage
 This should give you the dependencies you need to get going.
 1. Download this plugin and place it in wp-content/plugins/haxtheweb
 2. If using WordPress you'll also need the Classic Editor plugin; and then you'll have to enable it as the default editor (wp-admin/options-writing.php)
 3. Enable the Plugins (wp-admin/plugins.php)
-4. Go to edit or create a new page / post
-5. Enjoy HAX'ing the web
+4. Make sure Settings -> Permalinks is set to "Post name"
+5. Go to Settings -> Writing and scroll down to change your settings
+6. Go to edit or create a new page / post
+7. Enjoy HAX'ing the web
 
 ## Configuration
 HAX adds options to the Writing Settings page (wp-admin/options-writing.php) to allow for further integrations and customizations though the default settings are fine to get up and started with.

@@ -1,14 +1,14 @@
 <?php
 /**
  * @package haxtheweb
- * @version 3.8.0
+ * @version 3.9.0
  */
 /*
 Plugin Name: haxtheweb
 Plugin URI: https://github.com/elmsln/wp-plugin-hax
 Description: An ecosystem agnostic web editor to democratise the web and liberate users of platforms.
 Author: Bryan Ollendyke
-Version: 3.8.0
+Version: 3.9.0
 Author URI: https://haxtheweb.org/
 */
 
@@ -17,7 +17,7 @@ include_once 'WebComponentsService.php';
 // default to PSU "cdn"
 define('WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION', 'https://cdn.webcomponents.psu.edu/cdn/');
 // default list of elements to supply
-define('WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST', 'oer-schema lrn-aside grid-plate tab-list magazine-cover video-player image-compare-slider license-element self-check multiple-choice lrn-table hero-banner task-list media-image lrndesign-blockquote meme-maker a11y-gif-player paper-audio-player wikipedia-query lrn-vocab lrn-math person-testimonial citation-element place-holder stop-note q-r');
+define('WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST', '{"video-player": "@lrnwebcomponents/video-player/video-player.js","grid-plate": "@lrnwebcomponents/grid-plate/grid-plate.js","license-element": "@lrnwebcomponents/license-element/license-element.js","md-block": "@lrnwebcomponents/md-block/md-block.js","meme-maker": "@lrnwebcomponents/meme-maker/meme-maker.js","stop-note": "@lrnwebcomponents/stop-note/stop-note.js","wikipedia-query": "@lrnwebcomponents/wikipedia-query/wikipedia-query.js","cms-token": "@lrnwebcomponents/cms-hax/lib/cms-token.js","lrn-math-controller": "@lrnwebcomponents/lrn-math/lrn-math.js","retro-card": "@lrnwebcomponents/retro-card/retro-card.js","rss-items": "@lrnwebcomponents/rss-items/rss-items.js","self-check": "@lrnwebcomponents/self-check/self-check.js","team-member": "@lrnwebcomponents/team-member/team-member.js"}');
 
 // plugin dependency check
 // based on https://github.com/DevinVinson/WordPress-Plugin-Boilerplate/issues/468#issuecomment-361235083
@@ -38,6 +38,9 @@ register_activation_hook( __FILE__, 'haxtheweb_activate' );
 
 // Wire up HAX to hijack the Classic editor
 function haxtheweb_wordpress($hook) {
+  if ($hook == 'options-writing.php') {
+    wp_enqueue_script('haxtheweb_the_press', plugins_url('js/hax-form-helper.js', __FILE__), array(), false, true );
+  }
   if ($hook == 'post.php' || $hook == 'post-new.php') {
     wp_enqueue_script('haxtheweb_the_press', plugins_url('js/hax-the-press.js', __FILE__), array(), false, true );
     wp_register_style('haxtheweb_stylesheet', plugins_url('css/haxtheweb.css', __FILE__));
@@ -62,7 +65,7 @@ function haxtheweb_admin_init() {
  	// settings, put it in our new section
  	add_settings_field(
 		'haxtheweb_settings',
-		'HAX block editor',
+		'',
 		'haxtheweb_setting_callback_function',
 		'writing',
 		'haxtheweb_setting_section'
@@ -70,36 +73,39 @@ function haxtheweb_admin_init() {
   add_settings_section(
 		'haxtheweb_setting_section',
 		'Web components settings',
-		'haxtheweb_webcomponents_setting_section_callback_function',
+		'haxtheweb_setting_section_callback_function',
 		'writing'
 	);
  	
  	// Add the field with the names and function to use for our new
  	// settings, put it in our new section
  	add_settings_field(
-		'haxtheweb_webcomponents_location',
-		'Web components location',
-		'haxtheweb_webcomponents_setting_callback_function',
+		'haxtheweb_location',
+		'',
+		'haxtheweb_location_setting_callback_function',
 		'writing',
 		'haxtheweb_setting_section'
 	);
 	// Add the field with the names and function to use for our new
  	// settings, put it in our new section
  	add_settings_field(
-		'haxtheweb_webcomponents_location_other',
-		'Other location',
-		'webcomponents_setting_other_callback_function',
+		'haxtheweb_location_other',
+		'',
+		'haxtheweb_setting_other_callback_function',
 		'writing',
 		'haxtheweb_setting_section'
 	);
  	
  	// Register our setting so that $_POST handling is done for us and
  	// our callback function just has to echo the <input>
- 	register_setting( 'writing', 'haxtheweb_webcomponents_location' );
- 	register_setting( 'writing', 'haxtheweb_webcomponents_location_other' );
+ 	register_setting( 'writing', 'haxtheweb_location' );
+ 	register_setting( 'writing', 'haxtheweb_location_other' );
+ 	register_setting( 'writing', 'haxtheweb_blox' );
+ 	register_setting( 'writing', 'haxtheweb_stax' );
 
  	// Register our setting so that $_POST handling is done for us and
  	// our callback function just has to echo the <input>
+  register_setting( 'writing', 'haxtheweb_pk' );
   register_setting( 'writing', 'haxtheweb_autoload_element_list' );
   // build out the key space for our baseline app integrations
   $hax = new HAXService();
@@ -110,43 +116,27 @@ function haxtheweb_admin_init() {
 }
 add_action( 'admin_init', 'haxtheweb_admin_init' );
 
-function haxtheweb_webcomponents_setting_section_callback_function() {
+function haxtheweb_setting_section_callback_function() {
  	echo '<p>Location of the web components. Select a CDN or if building locally ensure you use other and manually define the location.</p>';
- }
-function haxtheweb_webcomponents_setting_callback_function() {
-	$selected = get_option( 'haxtheweb_webcomponents_location', WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION );
-	$options = array(
-		'https://cdn.webcomponents.psu.edu/cdn/' => 'Penn State CDN',
-		'https://cdn.waxam.io/' => 'Waxam CDN',
-		'/wp-content/haxtheweb/' => 'Local libraries folder (/wp-content/haxtheweb/)',
-		'other' => 'Other',
-	);
-	echo '<select name="haxtheweb_webcomponents_location" id="haxtheweb_webcomponents_location" class="code">';
-	foreach ($options as $option => $label) {
-		if ($option == $selected) {
-			echo '<option value="' . $option . '" selected="selected">' . $label . '</option>';
-		}
-		else {
-			echo '<option value="' . $option . '">' . $label . '</option>';
-		}
-	}
-	echo '</select>';
+  echo '<hax-element-list-selector fields-endpoint="' . get_site_url(null, '/wp-json/haxtheweb/v1/hax-element-list-selector-data.json?token=' . haxtheweb_generate_secure_key('hax-element-list-selector-data')) . '"></hax-element-list-selector>';
 }
-function webcomponents_setting_other_callback_function() {
-	echo '<input name="haxtheweb_webcomponents_location_other" id="haxtheweb_webcomponents_location_other" type="text" value="' . get_option( 'haxtheweb_webcomponents_location_other', '' ) . '" class="code" size="80" />';
+function haxtheweb_location_setting_callback_function() {
+	echo '<input type="hidden" name="haxtheweb_location" id="haxtheweb_location" value="' . get_option( 'haxtheweb_location', WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION ) . '" />';
+}
+function haxtheweb_setting_other_callback_function() {
+	echo '<input name="haxtheweb_location_other" id="haxtheweb_location_other" type="hidden" value="' . get_option( 'haxtheweb_location_other', '' ) . '" />';
+	echo '<input name="haxtheweb_stax" id="haxtheweb_stax" type="hidden" value="' . get_option( 'haxtheweb_stax', '' ) . '" />';
+	echo '<input name="haxtheweb_blox" id="haxtheweb_blox" type="hidden" value="' . get_option( 'haxtheweb_blox', '' ) . '" />';
 }
 
 function haxtheweb_setting_callback_function() {
   // autoload list
-  echo '<label>Autoloaded element list</label>';
-  echo '<input name="haxtheweb_autoload_element_list" id="haxtheweb_autoload_element_list" type="text" value="' . get_option('haxtheweb_autoload_element_list', WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST) . '" class="code" size="80" />';
-	echo '<div>This allows for auto-loading elements known to play nice with HAX. If you\'ve written any webcomponents that won\'t automatically be loaded into the page via that module this allows you to attempt to auto-load them when HAX loads. For example, if you have a video-player element in your package.json and want it to load on this interface, this would be a simple way to do that. Spaces only between elements, no comma. If you dont know what this means leave it alone</div>';
+  echo '<input name="haxtheweb_pk" id="haxtheweb_pk" type="hidden" value="' . get_option('haxtheweb_pk', '') . '" />';
+  echo '<input name="haxtheweb_autoload_element_list" id="haxtheweb_autoload_element_list" type="hidden" value="' . get_option('haxtheweb_autoload_element_list', WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST) . '" />';
   $hax = new HAXService();
   $baseApps = $hax->baseSupportedApps();
   foreach ($baseApps as $key => $app) {
-    echo '<label>' . $app['name'] . ' API key</label>';
-    echo '<input name="haxtheweb_' . $key . '_key" id="haxtheweb_' . $key . '_key" type="text" value="' . get_option('haxtheweb_' . $key . '_key', '') . '" class="code" size="80" />';
-    echo '<div>See <a href="' . $app['docs'] . '" target="_blank">' . $app['name'] . '</a> developer docs for details</div>';
+    echo '<input name="haxtheweb_' . $key . '_key" id="haxtheweb_' . $key . '_key" type="hidden" value="' . get_option('haxtheweb_' . $key . '_key', '') . '" />';
   }
 }
 
@@ -166,13 +156,302 @@ add_action( 'rest_api_init', function () {
     'methods' => 'GET',
     'callback' => 'haxtheweb_load_app_store',
   ) );
-} );
+});
+
+add_action( 'rest_api_init', function () {
+  register_rest_route( 'haxtheweb/v1', '/hax-element-list-selector-data.json', array(
+    'methods' => 'GET',
+    'callback' => 'loadHaxElementListSelectorData',
+  ) );
+});
+
+/**
+ * Load registration definitions
+ *
+ * @param mixed $token
+ *   CSRF security token.
+ *
+ * @return
+ *   The http response.
+ */
+function loadHaxElementListSelectorData(WP_REST_Request $request) {
+  // You can access parameters via direct array access on the object:
+  $token = $request->get_param( 'token' );
+  if (str_replace('?', '', $token) == haxtheweb_generate_secure_key('hax-element-list-selector-data')) {
+    $hax = new HaxService();
+    $apikeys = [];
+    $baseApps = $hax->baseSupportedApps();
+    foreach ($baseApps as $key => $app) {
+      if (get_option('haxtheweb_' . $key . '_key', '') != '') {
+        $apikeys['haxcore-integrations-' . $key] = get_option('haxtheweb_' . $key . '_key', '');
+      }
+    }
+    // need to account for bad data management before
+    $elementList = get_option('haxtheweb_autoload_element_list', WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST);
+    if (!json_decode($elementList)) {
+      $elementList = WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST;
+    }
+    $data = json_decode('{
+      "fields": [
+        {
+          "property": "haxcore",
+          "inputMethod": "tabs",
+          "properties": [
+            {
+              "property": "providers",
+              "title": "Providers",
+              "description": "Providers of functionality",
+              "properties": [
+                {
+                  "property": "haxcore-providers-cdn",
+                  "title": "CDN",
+                  "description": "Content delivery network that supplies your elements and HAX definitions",
+                  "inputMethod": "select",
+                  "options": {
+                    "https://cdn.webcomponents.psu.edu/cdn/": "Penn State CDN",
+                    "https://cdn.waxam.io/": "WaxaM CDN",
+                    "' . get_site_url(null, '/wp-content/haxtheweb/') . '": "Local libraries folder (' . get_site_url(null, '/wp-content/haxtheweb/') . ')",
+                    "other": "Other location"
+                  }
+                },
+                {
+                  "property": "haxcore-providers-other",
+                  "title": "Other",
+                  "description": "Entrypoint for the cdn / required files for a provider",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-providers-pk",
+                  "title": "Public key",
+                  "description": "Public key, required by some providers",
+                  "inputMethod": "textfield"
+                }
+              ]
+            },
+            {
+              "property": "search",
+              "title": "HAX Elements",
+              "properties": [
+                {
+                  "property": "haxcore-search-search",
+                  "title": "Search",
+                  "description": "Filter elements by name",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-search-tags",
+                  "title": "Tags",
+                  "description": "Tags to filter on",
+                  "inputMethod": "select",
+                  "options": {
+                    "": "",
+                    "Video": "Video",
+                    "Image": "Image",
+                    "Media": "Media",
+                    "Card": "Card",
+                    "Content": "Content",
+                    "Table": "Table",
+                    "Layout": "Layout",
+                    "Presentation": "Presentation",
+                    "Data": "Data",
+                    "Education": "Education",
+                    "Funny": "Funny"
+                  }
+                },
+                {
+                  "property": "haxcore-search-hasdemo",
+                  "title": "Has demo",
+                  "description": "Only show elements with demos",
+                  "inputMethod": "boolean"
+                },
+                {
+                  "property": "haxcore-search-columns",
+                  "title": "Columns",
+                  "description": "Columns to organize the results into",
+                  "inputMethod": "select",
+                  "options": {
+                    "2": "2 Columns",
+                    "3": "3 Columns",
+                    "4": "4 Columns",
+                    "5": "5 Columns"
+                  }
+                },
+                {
+                  "property": "haxcore-search-autoloader",
+                  "inputMethod": "object",
+                  "format": "cardlist"
+                }
+              ]
+            },
+            {
+              "property": "templates",
+              "title": "Templates / Layouts",
+              "description": "Manage groups of templates and layouts",
+              "properties": [
+                {
+                  "property": "haxcore-templates-templates",
+                  "title": "Templates",
+                  "description": "Stax version of HAXElementSchema",
+                  "inputMethod": "markup"
+                },
+                {
+                  "property": "haxcore-templates-layouts",
+                  "title": "Layouts",
+                  "description": "Blox version of HAXElementSchema",
+                  "inputMethod": "markup"
+                }
+              ]
+            },
+            {
+              "property": "integrations",
+              "title": "Integrations",
+              "description": "API keys and integrations with other services",
+              "properties": [
+                {
+                  "property": "haxcore-integrations-youtube",
+                  "title": "Youtube",
+                  "description": "https://developers.google.com/youtube/v3/getting-started",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-googlepoly",
+                  "title": "Google Poly",
+                  "description": "https://developers.google.com/youtube/v3/getting-started",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-memegenerator",
+                  "title": "Meme generator",
+                  "description": "https://memegenerator.net/Api",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-vimeo",
+                  "title": "Vimeo",
+                  "description": "https://developer.vimeo.com/",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-giphy",
+                  "title": "Giphy",
+                  "description": "https://developers.giphy.com/docs/",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-unsplash",
+                  "title": "Unsplash",
+                  "description": "https://unsplash.com/developers",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-flickr",
+                  "title": "Flickr",
+                  "description": "https://www.flickr.com/services/developer/api/",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-integrations-pixabay",
+                  "title": "Pixabay",
+                  "description": "https://pixabay.com/api/docs/",
+                  "inputMethod": "textfield"
+                }
+              ]
+            },
+            {
+              "property": "providerdetails",
+              "title": "Provider details",
+              "description": "Detailing the functionality provided by this provider",
+              "properties": [
+                {
+                  "property": "haxcore-providerdetails-name",
+                  "title": "Name",
+                  "description": "Content delivery network that supplies your elements and HAX definitions",
+                  "inputMethod": "textfield"
+                },
+                {
+                  "property": "haxcore-providerdetails-haxtags",
+                  "title": "HAX editable tags",
+                  "description": "Tags that extend HAX editor",
+                  "inputMethod": "markup"
+                },
+                {
+                  "property": "haxcore-providerdetails-othertags",
+                  "title": "Other web components",
+                  "description": "Valid tags discovered that don\'t provide HAX wiring, useful for building other applications",
+                  "inputMethod": "markup"
+                }
+              ]
+            },
+            {
+              "property": "help",
+              "title": "Help",
+              "description": "Help info and how to get started",
+              "properties": [
+                {
+                  "property": "haxcore-help-docs",
+                  "title": "Documentation",
+                  "description": "Help using HAX and related projects",
+                  "inputMethod": "md-block"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "value": {
+        "haxcore": {
+          "providers": {
+            "haxcore-providers-cdn": "' . get_option('haxtheweb_location', '') . '",
+            "haxcore-providers-other": "' . get_option('haxtheweb_location_other', '') . '",
+            "haxcore-providers-pk": "' . get_option('haxtheweb_pk', '') . '"
+          },
+          "search": {
+            "haxcore-search-search": "",
+            "haxcore-search-tags": "",
+            "haxcore-search-hasdemo": false,
+            "haxcore-search-columns": "",
+            "haxcore-search-autoloader": ' . $elementList . '
+          },
+          "templates": {
+            "haxcore-templates-templates": ' . json_encode(get_option('haxtheweb_stax', array())) . ',
+            "haxcore-templates-layouts": ' . json_encode(get_option('haxtheweb_blox', array())) . '
+          },
+          "integrations": ' . json_encode($apikeys) . ',
+          "providerdetails": {
+            "haxcore-providerdetails-name": "",
+            "haxcore-providerdetails-haxtags": "",
+            "haxcore-providerdetails-othertags": ""
+          },
+          "help": {
+            "haxcore-help-docs": "https://raw.githubusercontent.com/elmsln/HAXcms/master/HAXDocs.md"
+          }
+        }
+      }
+    }');
+    $status = 200;
+  }
+  else {
+    $data = array();
+    $status = 403;
+  }
+  $return = array(
+    'status' => $status,
+    'data' => $data,
+  );
+  // Create the response object
+  $response = new WP_REST_Response( $return );
+  $response->set_status( $status );
+  // send back happy headers
+  $response->header( 'Content-Type', 'application/json' );
+  // output the response as json
+  return $response;
+}
+
 /**
  * Callback to assemble the hax app store
  */
 function haxtheweb_load_app_store(WP_REST_Request $request) {
   // You can access parameters via direct array access on the object:
-  $param = $request['some_param'];
   $token = $request->get_param( 'token' );
   if ($token == haxtheweb_generate_secure_key('haxTheWeb')) {
     $hax = new HAXService();
@@ -189,7 +468,7 @@ function haxtheweb_load_app_store(WP_REST_Request $request) {
     $return = array(
       'status' => 200,
       'apps' => $json,
-      'autoloader' => explode(' ', get_option('haxtheweb_autoload_element_list', WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST)),
+      'autoloader' => json_decode(get_option('haxtheweb_autoload_element_list', WP_HAXTHEWEB_AUTOLOAD_ELEMENT_LIST)),
       'blox' => $hax->loadBaseBlox(),
 	  	'stax' => $hax->loadBaseStax(),
     );
@@ -214,7 +493,6 @@ add_action( 'rest_api_init', function () {
  */
 function haxtheweb_upload_file(WP_REST_Request $request) {
   // You can access parameters via direct array access on the object:
-  $param = $request['some_param'];
   $token = $request->get_param( 'token' );
   if ($token == haxtheweb_generate_secure_key('haxTheWeb') && isset($_FILES['file-upload'])) {
     $upload = $_FILES['file-upload'];
@@ -351,7 +629,6 @@ add_action( 'rest_api_init', function () {
 
 function haxtheweb_search_files(WP_REST_Request $request) {
   // You can access parameters via direct array access on the object:
-  $param = $request['some_param'];
   $token = $request->get_param( 'token' );
   if ($token == haxtheweb_generate_secure_key('haxTheWeb')) {
     // @todo return a list of media assets
@@ -367,25 +644,21 @@ function haxtheweb_search_files(WP_REST_Request $request) {
 }
 
 // Wire up web components to WordPress
-function haxtheweb_webcomponents_deps() {
-  $location = get_option( 'haxtheweb_webcomponents_location', WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION );
+function haxtheweb_deps() {
+  $location = get_option( 'haxtheweb_location', WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION );
   if ($location == 'other') {
-	$location = get_option( 'haxtheweb_webcomponents_location_other', '' );
-  }
-  // append base_path if this site has a url to start it
-  if (strpos($location, 'http') === FALSE) {
-	  $location = get_site_url(null, $location);
+	$location = get_option( 'haxtheweb_location_other', '' );
   }
   $buildLocation = $location;
   // support for build file to come local but assets via CDN
-  if (get_option('haxtheweb_webcomponents_local_build_file', false)) {
-    $buildLocation = '/wp-content/haxtheweb/';
+  if (get_option('haxtheweb_local_build_file', false)) {
+    $buildLocation = get_site_url(null, '/wp-content/haxtheweb/');
   }
   $wc = new WebComponentsService();
   print $wc->applyWebcomponents($buildLocation, $location);
 }
 // front end paths
-add_action( 'wp_footer', 'haxtheweb_webcomponents_deps' );
+add_action( 'wp_footer', 'haxtheweb_deps' );
 // back end paths
-add_action( 'admin_footer', 'haxtheweb_webcomponents_deps' );
+add_action( 'admin_footer', 'haxtheweb_deps' );
 ?>
