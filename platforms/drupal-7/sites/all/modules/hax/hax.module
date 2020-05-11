@@ -233,9 +233,16 @@ function _hax_node_form($node) {
   );
   // account for autoloaded elements which helps w/ timing issues on boot up
   $autoloader = json_decode(variable_get('hax_autoload_element_list', HAX_DEFAULT_ELEMENTS));
+  if (is_null($autoloader)) {
+    $autoloader = json_decode(HAX_DEFAULT_ELEMENTS);
+  }
+  $allowed_tags = array();
+  foreach($autoloader as $key => $location) {
+    array_push($allowed_tags, $key);
+  }
   // allow hijacking these defaults
-  drupal_alter('hax_allowed_tags', $autoloader);
-  $attributes['allowed-tags'] = json_encode($autoloader);
+  drupal_alter('hax_allowed_tags', $allowed_tags);
+  $attributes['allowed-tags'] = json_encode($allowed_tags);
   // can't reflect attributes to false so just don't add if they are FALSE
   if (variable_get('hax_hide_panel_ops', FALSE)) {
     $attributes['hide-panel-ops'] = 'hide-panel-ops';
@@ -372,6 +379,9 @@ function hax_hax_stax() {
 function hax_hax_autoloader() {
   // generate autoload list
   $autoloader = json_decode(variable_get('hax_autoload_element_list', HAX_DEFAULT_ELEMENTS));
+  if (is_null($autoloader)) {
+    $autoloader = json_decode(HAX_DEFAULT_ELEMENTS);
+  }
   return $autoloader;
 }
 
@@ -480,7 +490,7 @@ function loadHaxElementListSelectorData($token) {
     }
     // need to account for bad data management before
     $elementList = variable_get('hax_autoload_element_list', HAX_DEFAULT_ELEMENTS);
-    if (!json_decode($elementList)) {
+    if (is_null(json_decode($elementList))) {
       $elementList = HAX_DEFAULT_ELEMENTS;
     }
     $data = json_decode('{
