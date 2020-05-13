@@ -215,7 +215,8 @@ function _hax_site_connection() {
             "defaultGizmoType": "image",
             "gizmo": {
               "source": "url",
-              "id": "uuid"
+              "id": "uuid",
+              "mimetype": "filemime"
             }
           }
         }
@@ -276,7 +277,8 @@ function _hax_site_connection() {
             "defaultGizmoType": "video",
             "gizmo": {
               "source": "url",
-              "id": "uuid"
+              "id": "uuid",
+              "mimetype": "filemime"
             }
           }
         }
@@ -446,7 +448,8 @@ function _hax_site_connection() {
             "defaultGizmoType": "video",
             "gizmo": {
               "source": "url",
-              "id": "uuid"
+              "id": "uuid",
+              "mimetype": "filemime"
             }
           }
         }

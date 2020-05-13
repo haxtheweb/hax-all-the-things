@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\node\Controller\NodeViewController;
 use Drupal\node\NodeInterface;
+use Drupal\media\Entity\Media;
 use Symfony\Component\HttpFoundation\Response;
 use Drupal\hax\HaxService;
 
@@ -204,6 +205,31 @@ class HaxController extends NodeViewController {
               'filename' => $file->getFilename(),
             ),
           );
+          // create the Media entity to match
+          $parts = explode('/', $file->getMimeType());
+          switch ($parts[0]) {
+            case 'image':
+            case 'audio':
+            case 'video':
+              $bundle = $parts[0];
+              $field_name = 'field_media_' . $parts[0];
+              if ($parts[0] != 'image') {
+                $field_name .= '_file';
+              }
+            break;
+            default: 
+              $bundle = "document";
+              $field_name = 'field_media_document';
+            break;
+          }
+          $media = Media::create([
+            'bundle' => $bundle,
+            'uid' => \Drupal::currentUser()->id(),
+            'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+            'status' => 1,
+            $field_name => $file
+          ]);
+          $media->save();
           $status = 200;
         }
       }

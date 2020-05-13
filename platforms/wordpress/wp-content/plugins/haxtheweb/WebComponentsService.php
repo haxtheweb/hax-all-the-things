@@ -14,10 +14,10 @@ class WebComponentsService {
    */
   public function getBuild($directory  = '/', $forceUpgrade = "false", $cdn = '/') {
     return '
-    <script type="text/javascript">
+    <script>
       window.__appCDN="' . $cdn . '";
       window.__appForceUpgrade=' . $forceUpgrade . ';
     </script>
-    <script type="text/javascript" src="' . $directory . 'build.js"></script>';
+    <script src="' . $directory . 'build.js"></script>';
   }
 }
