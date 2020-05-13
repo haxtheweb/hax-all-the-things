@@ -46,11 +46,15 @@ function haxtheweb_wordpress($hook) {
     wp_register_style('haxtheweb_stylesheet', plugins_url('css/haxtheweb.css', __FILE__));
     wp_enqueue_style( 'haxtheweb_stylesheet' );
   }
+  if ($hook == 'upload.php') {
+    global $haxthewebUploadPage;
+    $haxthewebUploadPage = true;
+  }
 }
 add_action( 'admin_enqueue_scripts', 'haxtheweb_wordpress' );
 
 // Wire up web components to WordPress
-function haxtheweb_wordpress_connector() {
+function haxtheweb_wordpress_connector($hook) {
   $data = array(
     'url' => get_site_url(null, '/wp-json/haxtheweb/v1/appstore.json?token=' . haxtheweb_generate_secure_key('haxTheWeb')),
   );
@@ -562,7 +566,7 @@ function _HAXTHEWEB_site_connection() {
       "operations": {
         "browse": {
           "method": "GET",
-          "endPoint": "wp-json/haxtheweb/v1/search-files.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
+          "endPoint": "wp-json/wp/v2/media",
           "pagination": {
             "style": "link",
             "props": {
@@ -573,23 +577,29 @@ function _HAXTHEWEB_site_connection() {
             }
           },
           "search": {
+            "search": {
+              "title": "Search",
+              "type": "string"
+            }
           },
           "data": {
+            "per_page": 20
           },
           "resultMap": {
             "defaultGizmoType": "image",
-            "items": "list",
             "preview": {
-              "title": "name",
-              "details": "mime",
-              "image": "url",
-              "id": "uuid"
+              "title": "title.rendered",
+              "details": "caption.rendered",
+              "image": "media_details.sizes.thumbnail.source_url",
+              "id": "slug"
             },
             "gizmo": {
-              "source": "url",
-              "id": "uuid",
-              "title": "name",
-              "type": "type"
+              "source": "source_url",
+              "id": "slug",
+              "title": "title.rendered",
+              "caption": "caption.rendered",
+              "alt": "alt_text",
+              "mimetype": "mime_type"
             }
           }
         },
@@ -610,7 +620,8 @@ function _HAXTHEWEB_site_connection() {
             "defaultGizmoType": "image",
             "gizmo": {
               "source": "url",
-              "id": "uuid"
+              "id": "uuid",
+              "mimetype": "type"
             }
           }
         }
@@ -620,42 +631,23 @@ function _HAXTHEWEB_site_connection() {
   return $json;
 }
 
-add_action( 'rest_api_init', function () {
-  register_rest_route( 'haxtheweb/v1', '/search-files.json', array(
-    'methods' => 'GET',
-    'callback' => 'haxtheweb_search_files',
-  ) );
-} );
-
-function haxtheweb_search_files(WP_REST_Request $request) {
-  // You can access parameters via direct array access on the object:
-  $token = $request->get_param( 'token' );
-  if ($token == haxtheweb_generate_secure_key('haxTheWeb')) {
-    // @todo return a list of media assets
-    $return = array();
-    // Create the response object
-    $response = new WP_REST_Response( $return );
-    $response->set_status( 200 );
-    // send back happy headers
-    $response->header( 'Content-Type', 'application/json' );
-    // output the response as json
-    return $response;
-  }
-}
-
 // Wire up web components to WordPress
 function haxtheweb_deps() {
-  $location = get_option( 'haxtheweb_location', WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION );
-  if ($location == 'other') {
-	$location = get_option( 'haxtheweb_location_other', '' );
+  // stupid hack to ensure that we don't screw up the upload.php page
+  global $haxthewebUploadPage;
+  if (!$haxthewebUploadPage) {
+    $location = get_option( 'haxtheweb_location', WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION );
+    if ($location == 'other') {
+    $location = get_option( 'haxtheweb_location_other', '' );
+    }
+    $buildLocation = $location;
+    // support for build file to come local but assets via CDN
+    if (get_option('haxtheweb_local_build_file', false)) {
+      $buildLocation = get_site_url(null, '/wp-content/haxtheweb/');
+    }
+    $wc = new WebComponentsService();
+    print $wc->applyWebcomponents($buildLocation, $location);
   }
-  $buildLocation = $location;
-  // support for build file to come local but assets via CDN
-  if (get_option('haxtheweb_local_build_file', false)) {
-    $buildLocation = get_site_url(null, '/wp-content/haxtheweb/');
-  }
-  $wc = new WebComponentsService();
-  print $wc->applyWebcomponents($buildLocation, $location);
 }
 // front end paths
 add_action( 'wp_footer', 'haxtheweb_deps' );

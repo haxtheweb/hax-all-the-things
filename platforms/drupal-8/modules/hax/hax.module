@@ -79,8 +79,10 @@ function hax_hax_app_store() {
   $json = $hax->loadBaseAppStore($apikeys);
   // Pull in the core ones we supply.
   if (\Drupal::moduleHandler()->moduleExists('file')) {
-    $tmp = json_decode(_hax_site_connection());
-    array_push($json, $tmp);
+    $connetions = json_decode(_hax_site_connection());
+    foreach ($connetions as $tmp) {
+      array_push($json, $tmp);
+    }
   }
   return $json;
 }
@@ -156,10 +158,9 @@ function _hax_site_connection() {
   }
 
   // Built in support when file_entity and restws is in place.
-  $title = t('Internal files');
-  $json = '{
+  $json = '[{
     "details": {
-      "title": "' . $title . '",
+      "title": "' . t('Drupal Images') . '",
       "icon": "perm-media",
       "color": "light-blue",
       "author": "Drupal",
@@ -172,34 +173,33 @@ function _hax_site_connection() {
       "operations": {
         "browse": {
           "method": "GET",
-          "endPoint": "file.json",
-          "pagination": {
-            "style": "link",
-            "props": {
-              "first": "page.first",
-              "next": "page.next",
-              "previous": "page.previous",
-              "last": "page.last"
+          "endPoint": "jsonapi/media/image",
+          "search": {
+            "filter[name][condition][value]": {
+              "title": "Name",
+              "type": "string"
             }
           },
-          "search": {
-          },
           "data": {
+            "include": "thumbnail",
+            "filter[name][condition][path]": "name",
+            "filter[name][condition][operator]": "CONTAINS"
           },
           "resultMap": {
             "defaultGizmoType": "image",
-            "items": "list",
+            "items": "data",
             "preview": {
               "title": "name",
-              "details": "mime",
-              "image": "url",
-              "id": "uuid"
+              "details": "thumbnail.meta.alt",
+              "image": "thumbnail.uri.url",
+              "id": "id"
             },
             "gizmo": {
-              "source": "url",
-              "id": "uuid",
-              "title": "name",
-              "type": "type"
+              "source": "thumbnail.uri.url",
+              "id": "id",
+              "title": "thumbnail.meta.alt",
+              "alt": "thumbnail.meta.alt",
+              "mimetype": "thumbnail.filemime"
             }
           }
         },
@@ -208,12 +208,7 @@ function _hax_site_connection() {
           "endPoint": "hax-file-save/' . \Drupal::csrfToken()->get('hax-file-save') . '",
           "acceptsGizmoTypes": [
             "image",
-            "video",
-            "audio",
-            "pdf",
-            "svg",
-            "document",
-            "csv"
+            "svg"
           ],
           "resultMap": {
             "item": "data.file",
@@ -226,7 +221,238 @@ function _hax_site_connection() {
         }
       }
     }
-  }';
+  },{
+    "details": {
+      "title": "' . t('Drupal Video') . '",
+      "icon": "perm-media",
+      "color": "light-blue",
+      "author": "Drupal",
+      "description": "Drupal site integration for HAX",
+      "tags": ["media", "drupal"]
+    },
+    "connection": {
+      "protocol": "' . $parts[0] . '",
+      "url": "' . $parts[1] . '",
+      "operations": {
+        "browse": {
+          "method": "GET",
+          "endPoint": "jsonapi/media/video",
+          "search": {
+            "filter[name][condition][value]": {
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "data": {
+            "include": "thumbnail,field_media_video_file",
+            "filter[name][condition][path]": "name",
+            "filter[name][condition][operator]": "CONTAINS"
+          },
+          "resultMap": {
+            "defaultGizmoType": "video",
+            "items": "data",
+            "preview": {
+              "title": "name",
+              "details": "field_media_video_file.filemime",
+              "image": "thumbnail.uri.url",
+              "id": "id"
+            },
+            "gizmo": {
+              "source": "field_media_video_file.uri.url",
+              "id": "id",
+              "title": "name",
+              "mimetype": "field_media_video_file.filemime"
+            }
+          }
+        },
+        "add": {
+          "method": "POST",
+          "endPoint": "hax-file-save/' . \Drupal::csrfToken()->get('hax-file-save') . '",
+          "acceptsGizmoTypes": [
+            "video"
+          ],
+          "resultMap": {
+            "item": "data.file",
+            "defaultGizmoType": "video",
+            "gizmo": {
+              "source": "url",
+              "id": "uuid"
+            }
+          }
+        }
+      }
+    }
+  },{
+    "details": {
+      "title": "' . t('Drupal External Video') . '",
+      "icon": "perm-media",
+      "color": "light-blue",
+      "author": "Drupal",
+      "description": "Drupal site integration for HAX",
+      "tags": ["media", "drupal"]
+    },
+    "connection": {
+      "protocol": "' . $parts[0] . '",
+      "url": "' . $parts[1] . '",
+      "operations": {
+        "browse": {
+          "method": "GET",
+          "endPoint": "jsonapi/media/remote_video",
+          "search": {
+            "filter[name][condition][value]": {
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "data": {
+            "include": "thumbnail",
+            "filter[name][condition][path]": "name",
+            "filter[name][condition][operator]": "CONTAINS"
+          },
+          "resultMap": {
+            "defaultGizmoType": "video",
+            "items": "data",
+            "preview": {
+              "title": "name",
+              "details": "field_media_oembed_video",
+              "image": "thumbnail.uri.url",
+              "id": "id"
+            },
+            "gizmo": {
+              "source": "field_media_oembed_video",
+              "id": "id",
+              "title": "name",
+              "alt": "name"
+            }
+          }
+        }
+      }
+    }
+  },{
+    "details": {
+      "title": "' . t('Drupal Document') . '",
+      "icon": "perm-media",
+      "color": "light-blue",
+      "author": "Drupal",
+      "description": "Drupal site integration for HAX",
+      "tags": ["media", "drupal"]
+    },
+    "connection": {
+      "protocol": "' . $parts[0] . '",
+      "url": "' . $parts[1] . '",
+      "operations": {
+        "browse": {
+          "method": "GET",
+          "endPoint": "jsonapi/media/document",
+          "search": {
+            "filter[name][condition][value]": {
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "data": {
+            "include": "thumbnail,field_media_document",
+            "filter[name][condition][path]": "name",
+            "filter[name][condition][operator]": "CONTAINS"
+          },
+          "resultMap": {
+            "defaultGizmoType": "document",
+            "items": "data",
+            "preview": {
+              "title": "name",
+              "details": "field_media_document.filemime",
+              "image": "thumbnail.uri.url",
+              "id": "id"
+            },
+            "gizmo": {
+              "source": "field_media_document.uri.url",
+              "id": "id",
+              "title": "name",
+              "mimetype": "field_media_document.filemime"
+            }
+          }
+        },
+        "add": {
+          "method": "POST",
+          "endPoint": "hax-file-save/' . \Drupal::csrfToken()->get('hax-file-save') . '",
+          "acceptsGizmoTypes": [
+            "pdf",
+            "document",
+            "csv"
+          ],
+          "resultMap": {
+            "item": "data.file",
+            "defaultGizmoType": "document",
+            "gizmo": {
+              "source": "url",
+              "id": "uuid"
+            }
+          }
+        }
+      }
+    }
+  },{
+    "details": {
+      "title": "' . t('Drupal Audio') . '",
+      "icon": "perm-media",
+      "color": "light-blue",
+      "author": "Drupal",
+      "description": "Drupal site integration for HAX",
+      "tags": ["media", "drupal"]
+    },
+    "connection": {
+      "protocol": "' . $parts[0] . '",
+      "url": "' . $parts[1] . '",
+      "operations": {
+        "browse": {
+          "method": "GET",
+          "endPoint": "jsonapi/media/audio",
+          "search": {
+            "filter[name][condition][value]": {
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "data": {
+            "include": "thumbnail,field_media_audio_file",
+            "filter[name][condition][path]": "name",
+            "filter[name][condition][operator]": "CONTAINS"
+          },
+          "resultMap": {
+            "defaultGizmoType": "video",
+            "items": "data",
+            "preview": {
+              "title": "name",
+              "details": "field_media_audio_file.filemime",
+              "image": "thumbnail.uri.url",
+              "id": "id"
+            },
+            "gizmo": {
+              "source": "field_media_audio_file.uri.url",
+              "id": "id",
+              "title": "name",
+              "mimetype": "field_media_audio_file.filemime"
+            }
+          }
+        },
+        "add": {
+          "method": "POST",
+          "endPoint": "hax-file-save/' . \Drupal::csrfToken()->get('hax-file-save') . '",
+          "acceptsGizmoTypes": [
+            "audio"
+          ],
+          "resultMap": {
+            "item": "data.file",
+            "defaultGizmoType": "video",
+            "gizmo": {
+              "source": "url",
+              "id": "uuid"
+            }
+          }
+        }
+      }
+    }
+  }]';
   return $json;
 }
 

@@ -1,0 +1,15 @@
+{
+  "name": "drupal/jsonapi_hypermedia",
+  "description": "Complements the JSON API module with Hypermedia as the Engine of Application State",
+  "type": "drupal-module",
+  "license": "GPL-2.0+",
+  "authors": [
+    {
+      "name": "Gabriel SULLICE",
+      "email": "gabriel@sullice.com"
+    }
+  ],
+  "require": {
+    "drupal/core": "^8.8 || ^9.0"
+  }
+}

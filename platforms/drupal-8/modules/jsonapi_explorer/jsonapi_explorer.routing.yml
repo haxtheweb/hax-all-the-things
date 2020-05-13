@@ -1,0 +1,13 @@
+jsonapi_explorer.app.index:
+  path: '/jsonapi/explorer/app'
+  defaults:
+    _controller: 'Drupal\jsonapi_explorer\Controller\AppProxyController::app'
+  requirements:
+    _permission: 'use the jsonapi explorer'
+
+jsonapi_explorer.app:
+  path: '/jsonapi/explorer/{file}'
+  defaults:
+    _controller: 'Drupal\jsonapi_explorer\Controller\AppProxyController::proxy'
+  requirements:
+    _permission: 'use the jsonapi explorer'

@@ -1,0 +1,14 @@
+<?php
+
+function jsonapi_explorer_form_jsonapi_settings_alter(&$form) {
+  if (\Drupal::currentUser()->hasPermission('use the jsonapi explorer')) {
+    global $base_url;
+    \Drupal::messenger()->addStatus(t('Explore your API by <a href=":href" target="_blank">visiting the explorer!</a>', [
+      ':href' => \Drupal\Core\Url::fromRoute('jsonapi_explorer.app.index', [], [
+        'query' => [
+          'location' => $base_url,
+        ],
+      ])->toString(),
+    ]));
+  }
+}

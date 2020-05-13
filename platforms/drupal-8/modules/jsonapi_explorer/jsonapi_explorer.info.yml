@@ -1,0 +1,14 @@
+name: JSON:API Explorer
+type: module
+description: Provides a graphical explorer for JSON:API servers.
+package: Core
+core: 8.x
+dependencies:
+  - drupal:jsonapi
+  - jsonapi_schema:jsonapi_schema
+  - jsonapi_hypermedia:jsonapi_hypermedia
+
+# Information added by Drupal.org packaging script on 2019-10-08
+version: '8.x-1.0'
+project: 'jsonapi_explorer'
+datestamp: 1570552988

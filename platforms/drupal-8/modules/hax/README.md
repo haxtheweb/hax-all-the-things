@@ -1,3 +1,9 @@
+## Dependencies
+
+- Download https://www.drupal.org/project/jsonapi_include
+   - Optionally activate this patch: https://www.drupal.org/files/issues/2020-03-31/imagemetainfo-3123943-13532647.patch
+- Enable `JSONAPI`, `Media`, and `JSONAPI: Include` modules
+
 ## Usage
 
 This should give you the dependencies you need to get going.

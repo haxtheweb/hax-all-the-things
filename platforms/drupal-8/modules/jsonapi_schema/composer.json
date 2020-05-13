@@ -1,0 +1,25 @@
+{
+    "name": "drupal/jsonapi_schema",
+    "description": "Provides schema for all JSON:API routes.",
+    "type": "drupal-module",
+    "license": "GPL-2.0+",
+    "require": {},
+    "keywords": ["Drupal", "JSON:API", "JSON Schema"],
+    "homepage": "http://drupal.org/project/jsonapi_schema",
+    "authors": [
+        {
+            "name": "Gabe Sullice (gabesullice)",
+            "homepage": "https://www.drupal.org/u/gabesullice",
+            "role": "Maintainer"
+        },
+        {
+            "name": "Mateu Aguiló Bosch (e0ipso)",
+            "homepage": "https://www.drupal.org/u/e0ipso",
+            "role": "Maintainer"
+        }
+    ],
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/jsonapi_schema",
+        "source": "https://git.drupalcode.org/project/jsonapi_schema"
+    }
+}

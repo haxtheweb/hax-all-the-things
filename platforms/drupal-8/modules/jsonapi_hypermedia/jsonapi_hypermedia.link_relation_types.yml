@@ -1,0 +1,14 @@
+# JSON:API Hypermedia's link relation types.
+# See https://tools.ietf.org/html/rfc8288#section-2.1.2
+add:
+  description: "The link's target points to a resource where a user agent can cause an addition to the link's context."
+  reference: '[https://jsonapi.org/format/#document-links-link-relations]'
+update:
+  description: "The link's target points to a resource where a user agent can cause an update the link's context."
+  reference: '[https://jsonapi.org/format/#document-links-link-relations]'
+remove:
+  description: "The link's target points to a resource where a user agent can cause a removal of all or part of the link's context."
+  reference: '[https://jsonapi.org/format/#document-links-link-relations]'
+# relate:
+#   description: "The link's target points to a resource where a user agent can cause a direct or indirect relationship to be established with the link's context."
+#   reference: '[https://jsonapi.org/format/#document-links-link-relations]'

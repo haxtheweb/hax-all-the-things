@@ -1,0 +1,17 @@
+services:
+  jsonapi_hypermedia_provider.manager:
+    parent: default_plugin_manager
+    class: Drupal\jsonapi_hypermedia\Plugin\LinkProviderManager
+    calls:
+      - [setCurrentRouteMatch, ['@current_route_match']]
+      - [setLinkRelationTypeManager, ['@plugin.manager.link_relation_type']]
+
+  serializer.normalizer.link_collection.jsonapi_hypermedia:
+    class: Drupal\jsonapi\Normalizer\JsonapiHypermediaImpostor\JsonapiHypermediaLinkCollectionNormalizer
+    decorates: serializer.normalizer.link_collection.jsonapi
+    calls:
+      - [setLinkProviderManager, ['@jsonapi_hypermedia_provider.manager']]
+      - [setRenderer, ['@renderer']]
+  # This tag is commented out because it breaks the namespace impostor workaround. However, this tag is manually replicated in the JsonApiHypermediaServiceProvider.
+  # tags:
+  #   - { name: service_collector, tag: jsonapi_hypermedia_provider, call: addHypermediaProvider }

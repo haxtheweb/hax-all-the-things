@@ -1,0 +1,13 @@
+name: JSON:API Schema
+type: module
+description: Provides schema for all JSON:API routes.
+package: Core
+core: 8.x
+dependencies:
+  - drupal:jsonapi
+  - drupal:serialization
+
+# Information added by Drupal.org packaging script on 2020-02-28
+version: '8.x-1.0-alpha8'
+project: 'jsonapi_schema'
+datestamp: 1582916779

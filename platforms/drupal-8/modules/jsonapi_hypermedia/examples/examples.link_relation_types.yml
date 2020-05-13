@@ -1,0 +1,8 @@
+authenticate:
+  description: "Refers to a resource where a client may authenticate for the the context URI."
+  reference: "[TBD]"
+  notes: "This is a draft link relation type that has not yet been officially registered. See https://tools.ietf.org/html/draft-pot-authentication-link-00#section-6.1."
+logout:
+  description: "Refers to an endpoint where a client may invalidate the current authentication session."
+  reference: "[TBD]"
+  notes: "This is a draft link relation type that has not yet been officially registered. See https://tools.ietf.org/html/draft-pot-authentication-link-00#section-6.3."
