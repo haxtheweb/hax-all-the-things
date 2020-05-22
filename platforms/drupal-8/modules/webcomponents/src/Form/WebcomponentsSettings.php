@@ -53,7 +53,7 @@ class WebcomponentsSettings extends ConfigFormBase {
       '#options' => array(
         'https://cdn.webcomponents.psu.edu/cdn/' => $this->t('Penn state CDN'),
         'https://cdn.waxam.io/' => $this->t('WaxaM CDN'),
-        base_path() . 'sites/all/libraries/webcomponents' => $this->t('Local (sites/all/libraries/webcomponents)'),
+        base_path() . 'sites/all/libraries/webcomponents/' => $this->t('Local (sites/all/libraries/webcomponents/)'),
         'other' => $this->t('Other (listed below)'),
       )
     ];

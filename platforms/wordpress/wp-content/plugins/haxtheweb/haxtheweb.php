@@ -1,14 +1,14 @@
 <?php
 /**
  * @package haxtheweb
- * @version 3.9.1
+ * @version 3.9.3
  */
 /*
 Plugin Name: haxtheweb
 Plugin URI: https://github.com/elmsln/wp-plugin-hax
 Description: An ecosystem agnostic web editor to democratise the web and liberate users of platforms.
 Author: Bryan Ollendyke
-Version: 3.9.1
+Version: 3.9.3
 Author URI: https://haxtheweb.org/
 */
 
@@ -55,8 +55,12 @@ add_action( 'admin_enqueue_scripts', 'haxtheweb_wordpress' );
 
 // Wire up web components to WordPress
 function haxtheweb_wordpress_connector($hook) {
+  $poststr = '&post=';
+  if (isset($_GET['post'])) {
+    $poststr.= sanitize_key($_GET['post']);
+  }
   $data = array(
-    'url' => get_site_url(null, '/wp-json/haxtheweb/v1/appstore.json?token=' . haxtheweb_generate_secure_key('haxTheWeb')),
+    'url' => get_site_url(null, '/wp-json/haxtheweb/v1/appstore.json?token=' . haxtheweb_generate_secure_key('haxTheWeb')) . $poststr,
   );
   print '<style>#adminmenuwrap{z-index:1000 !important;}h-a-x{padding:40px;}</style><script>window.haxThePressConnector=\'' . json_encode($data) . '\';</script>';
 }
@@ -214,7 +218,7 @@ function loadHaxElementListSelectorData(WP_REST_Request $request) {
                   "options": {
                     "https://cdn.webcomponents.psu.edu/cdn/": "Penn State CDN",
                     "https://cdn.waxam.io/": "WaxaM CDN",
-                    "' . get_site_url(null, '/wp-content/haxtheweb/') . '": "Local libraries folder (' . get_site_url(null, '/wp-content/haxtheweb/') . ')",
+                    "' . content_url('haxtheweb/') . '": "Local libraries folder (' . content_url('haxtheweb/') . ')",
                     "other": "Other location"
                   }
                 },
@@ -457,6 +461,7 @@ function loadHaxElementListSelectorData(WP_REST_Request $request) {
 function haxtheweb_load_app_store(WP_REST_Request $request) {
   // You can access parameters via direct array access on the object:
   $token = $request->get_param( 'token' );
+  $post = $request->get_param( 'post' );
   if ($token == haxtheweb_generate_secure_key('haxTheWeb')) {
     $hax = new HAXService();
     $apikeys = array();
@@ -467,7 +472,7 @@ function haxtheweb_load_app_store(WP_REST_Request $request) {
       }
     }
     $json = $hax->loadBaseAppStore($apikeys);
-    $tmp = json_decode(_HAXTHEWEB_site_connection());
+    $tmp = json_decode(_HAXTHEWEB_site_connection($post));
     array_push($json, $tmp);
     $return = array(
       'status' => 200,
@@ -498,26 +503,33 @@ add_action( 'rest_api_init', function () {
 function haxtheweb_upload_file(WP_REST_Request $request) {
   // You can access parameters via direct array access on the object:
   $token = $request->get_param( 'token' );
+  $post = $request->get_param( 'post' );
   if ($token == haxtheweb_generate_secure_key('haxTheWeb') && isset($_FILES['file-upload'])) {
-    $upload = $_FILES['file-upload'];
-    // check for a file upload
-    if (isset($upload['tmp_name']) && is_uploaded_file($upload['tmp_name'])) {
-      // get contents of the file if it was uploaded into a variable
-      $filedata = file_get_contents($upload['tmp_name']);
-      $wpUpload = wp_upload_dir();
-      // attempt to save the file
-      $fullpath = $wpUpload['path'] . '/' . $upload['name'];
-      if ($size = file_put_contents($fullpath, $filedata)) {
-        // @todo fake the file object creation stuff from CMS land
+    $file = $_FILES["file-upload"];
+    if ($file['name']) { 
+      $upload = array( 
+        'name' => $file['name'],
+        'type' => $file['type'], 
+        'tmp_name' => $file['tmp_name'], 
+        'error' => $file['error'],
+        'size' => $file['size']
+      );
+      $attachment_id = haxtheweb_handle_attachment($upload, $post);
+      $attachment_file = get_attached_file($attachment_id);
+      // check for a file upload
+      if (isset($attachment_file)) {
+        $abase = basename($attachment_file);
+        // get contents of the file if it was uploaded into a variable
+        $wpUpload = wp_upload_dir();
         $return = array(
         'data' => array(
           'file' => array(
-            'path' => $fullpath,
-            'fullUrl' => $wpUpload['url'] . '/' . $upload['name'],
-            'url' =>  get_site_url(null, '/wp-content/uploads' . $wpUpload['subdir'] . '/' . $upload['name'], 'relative'),
-            'type' => mime_content_type($fullpath),
-            'name' => $upload['name'],
-            'size' => $size,
+            'path' => $attachment_file,
+            'fullUrl' => $wpUpload['url'] . '/' . $abase,
+            'url' =>  $wpUpload['url'] . '/' . $abase,
+            'type' => mime_content_type($attachment_file),
+            'name' => $abase,
+            'size' => $file['size'],
             )
           )
         );
@@ -542,18 +554,33 @@ function haxtheweb_upload_file(WP_REST_Request $request) {
   }
 }
 
+function haxtheweb_handle_attachment($file_handler,$post_id = 0) {
+  // check to make sure its a successful upload
+  if ($file_handler['error'] !== UPLOAD_ERR_OK) __return_false();
+
+  require_once(ABSPATH . "wp-admin" . '/includes/image.php');
+  require_once(ABSPATH . "wp-admin" . '/includes/file.php');
+  require_once(ABSPATH . "wp-admin" . '/includes/media.php');
+
+  $attach_id = media_handle_upload( 'file-upload', $post_id );
+  if ( is_numeric( $attach_id ) ) {
+    update_post_meta( $post_id, '_my_file_upload', $attach_id );
+  }
+  return $attach_id;
+}
+
 /**
  * Connection details for this site. This is where
  * all the really important stuff is that will
  * make people freak out.
  */
-function _HAXTHEWEB_site_connection() {
+function _HAXTHEWEB_site_connection($post = '') {
   $base_url = get_site_url(null, '/');
   $parts = explode('://', $base_url);
   // built in support when file_entity and restws is in place
   $json = '{
     "details": {
-      "title": "Internal files",
+      "title": "WordPress Media",
       "icon": "perm-media",
       "color": "light-blue",
       "author": "WordPress",
@@ -605,7 +632,7 @@ function _HAXTHEWEB_site_connection() {
         },
         "add": {
           "method": "POST",
-          "endPoint": "wp-json/haxtheweb/v1/file-upload.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '",
+          "endPoint": "wp-json/haxtheweb/v1/file-upload.json?token=' . haxtheweb_generate_secure_key('haxTheWeb') . '&post=' . $post . '",
           "acceptsGizmoTypes": [
             "image",
             "video",
@@ -643,7 +670,7 @@ function haxtheweb_deps() {
     $buildLocation = $location;
     // support for build file to come local but assets via CDN
     if (get_option('haxtheweb_local_build_file', false)) {
-      $buildLocation = get_site_url(null, '/wp-content/haxtheweb/');
+      $buildLocation = content_url('haxtheweb/');
     }
     $wc = new WebComponentsService();
     print $wc->applyWebcomponents($buildLocation, $location);
