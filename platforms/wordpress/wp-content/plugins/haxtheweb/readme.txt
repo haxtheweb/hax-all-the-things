@@ -4,7 +4,7 @@ Donate link: https://haxtheweb.org/
 Tags: editor, haxtheweb, disable gutenberg, classic editor
 Requires at least: 4.9
 Tested up to: 5.4
-Stable tag: 3.9.3
+Stable tag: 3.9.4
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html

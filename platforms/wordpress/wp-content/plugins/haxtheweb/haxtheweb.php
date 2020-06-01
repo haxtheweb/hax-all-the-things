@@ -1,14 +1,14 @@
 <?php
 /**
  * @package haxtheweb
- * @version 3.9.3
+ * @version 3.9.4
  */
 /*
 Plugin Name: haxtheweb
 Plugin URI: https://github.com/elmsln/wp-plugin-hax
 Description: An ecosystem agnostic web editor to democratise the web and liberate users of platforms.
 Author: Bryan Ollendyke
-Version: 3.9.3
+Version: 3.9.4
 Author URI: https://haxtheweb.org/
 */
 
@@ -38,17 +38,19 @@ register_activation_hook( __FILE__, 'haxtheweb_activate' );
 
 // Wire up HAX to hijack the Classic editor
 function haxtheweb_wordpress($hook) {
+  global $haxthewebLoadDeps;
+  // all requests default to allowing the pass through
+  $haxthewebLoadDeps = true;
   if ($hook == 'options-writing.php') {
     wp_enqueue_script('haxtheweb_the_press', plugins_url('js/hax-form-helper.js', __FILE__), array(), false, true );
   }
-  if ($hook == 'post.php' || $hook == 'post-new.php') {
+  else if ($hook == 'post.php' || $hook == 'post-new.php') {
     wp_enqueue_script('haxtheweb_the_press', plugins_url('js/hax-the-press.js', __FILE__), array(), false, true );
     wp_register_style('haxtheweb_stylesheet', plugins_url('css/haxtheweb.css', __FILE__));
     wp_enqueue_style( 'haxtheweb_stylesheet' );
   }
-  if ($hook == 'upload.php') {
-    global $haxthewebUploadPage;
-    $haxthewebUploadPage = true;
+  else if (is_admin()) {
+    $haxthewebLoadDeps = false;
   }
 }
 add_action( 'admin_enqueue_scripts', 'haxtheweb_wordpress' );
@@ -658,26 +660,30 @@ function _HAXTHEWEB_site_connection($post = '') {
   return $json;
 }
 
+// admin wrapper to test pages we know HAX can't load on in the admin side
+function haxtheweb_deps_admin() {
+  // stupid hack to ensure that we don't screw up admin pages that can't run this
+  global $haxthewebLoadDeps;
+  if ($haxthewebLoadDeps) {
+    haxtheweb_deps();
+  }
+}
 // Wire up web components to WordPress
 function haxtheweb_deps() {
-  // stupid hack to ensure that we don't screw up the upload.php page
-  global $haxthewebUploadPage;
-  if (!$haxthewebUploadPage) {
-    $location = get_option( 'haxtheweb_location', WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION );
-    if ($location == 'other') {
-    $location = get_option( 'haxtheweb_location_other', '' );
-    }
-    $buildLocation = $location;
-    // support for build file to come local but assets via CDN
-    if (get_option('haxtheweb_local_build_file', false)) {
-      $buildLocation = content_url('haxtheweb/');
-    }
-    $wc = new WebComponentsService();
-    print $wc->applyWebcomponents($buildLocation, $location);
+  $location = get_option( 'haxtheweb_location', WP_HAXTHEWEB_WEBCOMPONENTS_LOCATION );
+  if ($location == 'other') {
+  $location = get_option( 'haxtheweb_location_other', '' );
   }
+  $buildLocation = $location;
+  // support for build file to come local but assets via CDN
+  if (get_option('haxtheweb_local_build_file', false)) {
+    $buildLocation = content_url('haxtheweb/');
+  }
+  $wc = new WebComponentsService();
+  print $wc->applyWebcomponents($buildLocation, $location);
 }
 // front end paths
 add_action( 'wp_footer', 'haxtheweb_deps' );
 // back end paths
-add_action( 'admin_footer', 'haxtheweb_deps' );
+add_action( 'admin_footer', 'haxtheweb_deps_admin' );
 ?>
