@@ -1,0 +1,25 @@
+{
+  "name": "nuxt-hax",
+  "version": "1.0.0",
+  "description": "My groundbreaking Nuxt.js project",
+  "author": "btopro",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development nodemon server/index.js --watch server",
+    "build": "nuxt build",
+    "start": "cross-env NODE_ENV=production node server/index.js",
+    "generate": "nuxt generate"
+  },
+  "dependencies": {
+    "nuxt": "^2.0.0",
+    "cross-env": "^5.2.0",
+    "express": "^4.16.4",
+    "@lrnwebcomponents/h-a-x": "2.6.17",
+    "@lrnwebcomponents/voice-recorder": "2.6.17"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.9",
+    "@open-wc/webpack-import-meta-loader": "0.4.7",
+    "@babel/plugin-syntax-dynamic-import": "7.8.3"
+  }
+}
