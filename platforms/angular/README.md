@@ -1,0 +1,1 @@
+After about 4 failed attempts to configure webpack and babel to handle modern javascript within different angular boilerplates, we have decided to not include an example of doing this in angular. We will gladly accept this as a contribution.
