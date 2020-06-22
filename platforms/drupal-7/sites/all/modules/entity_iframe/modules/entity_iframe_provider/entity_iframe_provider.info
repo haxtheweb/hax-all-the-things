@@ -1,0 +1,12 @@
+name = "Entity iframe provider"
+description = "Support for secure js based communications with a parent running entity iframe consumer."
+package = "Iframe"
+core = 7.x
+dependencies[] = entity_iframe_mode
+configure = admin/config/system/entity_iframe
+; Information added by Drupal.org packaging script on 2016-12-05
+version = "7.x-1.2"
+core = "7.x"
+project = "entity_iframe"
+datestamp = "1480953504"
+

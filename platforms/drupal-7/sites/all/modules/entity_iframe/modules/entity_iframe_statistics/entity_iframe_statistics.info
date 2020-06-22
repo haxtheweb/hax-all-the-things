@@ -1,0 +1,13 @@
+name = "Entity iframe statistics"
+description = Count node views when in entity iframe mode.
+package = "Iframe"
+core = 7.x
+dependencies[] = entity_iframe
+dependencies[] = statistics
+
+; Information added by Drupal.org packaging script on 2016-12-05
+version = "7.x-1.2"
+core = "7.x"
+project = "entity_iframe"
+datestamp = "1480953504"
+

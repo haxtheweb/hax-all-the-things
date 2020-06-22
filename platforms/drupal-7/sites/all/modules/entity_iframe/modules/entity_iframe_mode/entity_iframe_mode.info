@@ -1,0 +1,11 @@
+name = "Entity iframe mode"
+description = Tries to keep links going to the entity_iframe selected theme.  Can cause issues with other url rewriters.
+package = "Iframe"
+core = 7.x
+dependencies[] = entity_iframe
+; Information added by Drupal.org packaging script on 2016-12-05
+version = "7.x-1.2"
+core = "7.x"
+project = "entity_iframe"
+datestamp = "1480953504"
+

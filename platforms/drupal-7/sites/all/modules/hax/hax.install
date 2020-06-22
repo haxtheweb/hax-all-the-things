@@ -13,3 +13,10 @@ function hax_install() {
 function hax_update_7001(&$sandbox) {
   drupal_flush_all_caches();
 }
+
+/**
+ * Force cache clear as we normalized endpoints
+ */
+function hax_update_7002(&$sandbox) {
+  drupal_flush_all_caches();
+}

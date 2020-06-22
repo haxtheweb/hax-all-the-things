@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * Implements hook_custom_theme().
+ */
+function entity_iframe_mode_custom_theme() {
+  // this probably isn't required but acts as a fallback
+  if (_entity_iframe_mode_enabled()) {
+    return _entity_iframe_theme();
+  }
+}
+
+/**
+ * Implements hook_url_outbound_alter().
+ *
+ * Allow for the entering of a quazi "iframe mode".
+ * Once in iframe mode, it is not possible to leave outside of manually.
+ * This keeps links (within an iframe) in the same theme.
+ * This simply switches the theme, not respect entity_iframe settings
+ */
+function entity_iframe_mode_url_outbound_alter(&$path, &$options, $original) {
+  // test if we are in "iframe mode" by either path or query setting
+  $mode = _entity_iframe_mode_enabled();
+  if ($mode && strpos($path, 'sites/all') !== 0) {
+    $options['query']['entity_iframe'] = $mode;
+    // flag for when this is a series of actions to keep running in the frame
+    if (isset($_GET['modal'])) {
+      $options['query']['modal'] = $mode;
+    }
+  }
+}
+
+/**
+ * Test that we are in iframe mode.
+ */
+function _entity_iframe_mode_enabled() {
+  if (isset($_GET['entity_iframe'])) {
+    $return = (!empty($_GET['entity_iframe']) ? $_GET['entity_iframe'] : TRUE);
+    return $return;
+  }
+  elseif (arg(0) == 'entity_iframe') {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_voicecommander_access_alter().
+ */
+function entity_iframe_mode_voicecommander_access_alter(&$access) {
+  if (_entity_iframe_mode_enabled()) {
+    $access = FALSE;
+  }
+}
