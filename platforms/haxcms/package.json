@@ -112,7 +112,7 @@
     "readable-stream": "1.1.14",
     "isarray": "1.0.0",
     "source-map": "0.5.7",
-    "kind-of": "6.0.2",
+    "kind-of": "6.0.3",
     "is-number": "4.0.0",
     "once": "1.4.0",
     "minimist": "1.2.0",
