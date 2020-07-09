@@ -12,7 +12,7 @@ include_once __DIR__ . '/../../HAXapi/php/HAXAppStoreService.php';
  * This ensures that HAXcms's build script loads at the right times
  */
 function haxcms_webcomponents_build_integration_markup_alter(&$markup) {
-  if (arg(0) == 'haxcms') {
+  if (_is_haxcms_context()) {
     // some Drupal markup hacks to go w/ the HAXcms build script
     $markup .= "\n" . '
     <style>#admin-menu .dropdown a {
@@ -31,7 +31,7 @@ function haxcms_webcomponents_build_integration_markup_alter(&$markup) {
  * Implements hook_cron().
  */
 function haxcms_cron() {
-  // ensure entity iframe theme is enabled
+  // ensure haxcms theme is enabled
   $theme = _haxcms_drupal_theme();
   if (!_haxcms_drupal_theme_exists($theme)) {
     theme_enable(array($theme));
@@ -495,7 +495,7 @@ function _haxcms_loadJOS($book) {
   $site->metadata->node->fields = new stdClass();
   // theme
   $site->metadata->theme = new stdClass();
-  $site->metadata->theme->element = variable_get("haxcms_settings_theme", "learn-two-theme");
+  $site->metadata->theme->element = variable_get("haxcms_settings_theme", "clean-one");
   $site->metadata->theme->variables = new stdClass();
   $site->metadata->theme->variables->image = file_create_url(theme_get_setting('logo_path'));
   $site->metadata->theme->variables->hexCode = variable_get("haxcms_settings_hexCode", "#009d75");
@@ -568,10 +568,12 @@ function _haxcms_node_access($op, $node = NULL) {
  * @return [type]       [description]
  */
 function _haxcms_loader($node = NULL) {
+  $baseURI = base_path();
   if ($node == NULL || $node == 'haxcms') {
     $args = arg();
     if ($args[0] == 'haxcms') {
       array_shift($args);
+      $baseURI .= 'haxcms/';
     }
     
     $path = drupal_get_normal_path(str_replace('%20', ' ',implode('/', $args)));
@@ -582,6 +584,7 @@ function _haxcms_loader($node = NULL) {
     // write content to screen, wrapped in tag to do all the work
     $siteAttributes = array(
       'file' => base_path() . 'haxapi/loadJOS/' . $node->book['bid'],
+      'base-uri' => $baseURI,
     );
     // deep developer function to allow full control over tag's properties
     drupal_alter('haxcms_render_attributes', $siteAttributes);
@@ -598,7 +601,7 @@ function _haxcms_loader($node = NULL) {
  */
 function haxcms_custom_theme() {
   // this probably isn't required but acts as a fallback
-  if (arg(0) == 'haxcms') {
+  if (_is_haxcms_context()) {
     return _haxcms_drupal_theme();
   }
 }
@@ -648,9 +651,9 @@ function template_preprocess_haxcms(&$variables) {
  */
 function haxcms_page_build(&$page) {
   // HAXcms NEEDS base set to operate correctly
-  if (arg(0) == "haxcms") {
+  if (_is_haxcms_context()) {
     $href = base_path();
-    if (!drupal_is_front_page()) {
+    if (!drupal_is_front_page() && arg(0) == "haxcms") {
       $href.= 'haxcms/';
     }
     $tag = array(
@@ -663,6 +666,15 @@ function haxcms_page_build(&$page) {
   }
 }
 
+function _is_haxcms_context() {
+  $is = FALSE;
+  if (arg(0) == "haxcms") {
+    $is = TRUE;
+  }
+  drupal_alter('is_haxcms_context', $is);
+  return $is;
+}
+
 /**
  * Helper function to make outline designer settings more obvious.
  */
@@ -670,11 +682,13 @@ function haxcms_settings($form, &$form_state) {
   $form['haxcms_settings_theme'] = [
     '#type' => 'select',
     '#title' => t('Theme'),
-    '#default_value' => variable_get('haxcms_settings_theme', 'learn-two-theme'),
+    '#default_value' => variable_get('haxcms_settings_theme', 'clean-one'),
     '#options' => array(
-      'learn-two-theme' => t('Course theme'),
+      'clean-one' => t('Course theme'),
+      'clean-two' => t('Course theme two'),
+      'learn-two-theme' => t('Course theme three'),
       'outline-player' => t('Documentation theme'),
-      'haxor-slevin' => t('Developer blog theme'),
+      'haxor-slevin' => t('Developer Blog theme'),
     ),
     '#description' => t("Full URL to the social account"),
   ];
