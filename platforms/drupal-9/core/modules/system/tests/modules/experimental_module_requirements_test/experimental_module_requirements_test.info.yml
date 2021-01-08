@@ -1,0 +1,10 @@
+name: 'Experimental Requirements Test'
+type: module
+description: 'Module in the experimental package to test hook_requirements() with an experimental module.'
+package: Core (Experimental)
+# version: VERSION
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

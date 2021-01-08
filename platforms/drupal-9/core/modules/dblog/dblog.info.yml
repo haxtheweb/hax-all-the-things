@@ -1,0 +1,11 @@
+name: 'Database Logging'
+type: module
+description: 'Logs system events in the database.'
+package: Core
+# version: VERSION
+configure: system.logging_settings
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

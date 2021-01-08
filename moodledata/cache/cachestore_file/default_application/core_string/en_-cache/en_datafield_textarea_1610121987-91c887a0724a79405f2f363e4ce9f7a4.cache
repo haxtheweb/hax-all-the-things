@@ -1,0 +1,1 @@
+a:5:{s:8:"maxbytes";s:34:"Maximum embedded file size (bytes)";s:13:"maxbytes_desc";s:43:"If set to zero will be unlimited by default";s:10:"pluginname";s:9:"Text area";s:14:"fieldtypelabel";s:14:"Textarea field";s:16:"privacy:metadata";s:98:"The Textarea field component does not store any personal data, it uses tables defined in mod_data.";}

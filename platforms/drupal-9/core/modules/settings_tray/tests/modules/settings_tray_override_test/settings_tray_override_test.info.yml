@@ -1,0 +1,11 @@
+name: 'Configuration override test for Settings Tray'
+type: module
+package: Testing
+# version: VERSION
+dependencies:
+  - drupal:settings_tray
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

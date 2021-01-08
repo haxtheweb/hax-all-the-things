@@ -1,0 +1,13 @@
+name: Text
+type: module
+description: 'Defines simple text field types.'
+package: Field types
+# version: VERSION
+dependencies:
+  - drupal:field
+  - drupal:filter
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

@@ -1,0 +1,13 @@
+name: 'Views Entity Test'
+type: module
+description: 'Provides base fields for views tests of entity_test entity type.'
+package: Testing
+# version: VERSION
+dependencies:
+  - drupal:views
+  - drupal:entity_test
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

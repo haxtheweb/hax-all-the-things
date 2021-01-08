@@ -1,0 +1,15 @@
+name: 'Migrate Drupal UI'
+type: module
+description: 'Provides a user interface for migrating from older Drupal versions.'
+package: Migration
+# version: VERSION
+configure: migrate_drupal_ui.upgrade
+dependencies:
+  - drupal:migrate
+  - drupal:migrate_drupal
+  - drupal:dblog
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

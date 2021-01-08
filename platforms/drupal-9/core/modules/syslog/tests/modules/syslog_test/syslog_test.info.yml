@@ -1,0 +1,12 @@
+name: 'Syslog test'
+type: module
+description: 'Provides a test logger for syslog module.'
+package: Testing
+# version: VERSION
+dependencies:
+  - drupal:syslog
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

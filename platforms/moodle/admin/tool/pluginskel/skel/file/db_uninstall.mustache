@@ -1,0 +1,22 @@
+{{!
+    db/uninstall.php
+
+    * component
+    * copyright
+}}
+{{< common/boilerplate_php }}
+{{$ description }}Code that is executed before the tables and data are dropped during the plugin uninstallation.{{/ description }}
+{{$ package }}{{ component }}{{/ package }}
+{{$ extratags }}
+ * @category    upgrade
+{{/ extratags }}
+{{$ copyright }}{{ copyright }}{{/ copyright }}
+{{/ common/boilerplate_php }}
+
+/**
+ * Custom uninstallation procedure.
+ */
+function xmldb_{{^ component_type_is_mod }}{{ component_type }}_{{/ component_type_is_mod }}{{ component_name }}_uninstall() {
+
+    return true;
+}

@@ -1,0 +1,12 @@
+name: 'Entity schema test module'
+type: module
+description: 'Provides entity and field definitions to test entity schema.'
+package: Testing
+# version: VERSION
+dependencies:
+  - drupal:entity_test
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

@@ -1,0 +1,12 @@
+name: Views
+type: module
+description: 'Create customized lists and queries from your database.'
+package: Core
+# version: VERSION
+dependencies:
+  - drupal:filter
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

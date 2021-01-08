@@ -1,0 +1,11 @@
+name: 'Test theme libraries empty'
+type: theme
+description: 'Test theme with empty libraries in theme.info.yml'
+# version: VERSION
+base theme: classy
+libraries:
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

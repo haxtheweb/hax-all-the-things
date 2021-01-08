@@ -1,0 +1,12 @@
+name: 'Language form elements test'
+type: module
+description: 'Support module for the language form elements tests.'
+package: Testing
+# version: VERSION
+dependencies:
+  - drupal:entity_test
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

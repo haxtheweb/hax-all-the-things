@@ -1,0 +1,13 @@
+name: Statistics
+type: module
+description: 'Logs content statistics for your site.'
+package: Core
+# version: VERSION
+configure: statistics.settings
+dependencies:
+  - drupal:node
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

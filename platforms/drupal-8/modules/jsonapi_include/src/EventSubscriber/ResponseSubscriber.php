@@ -83,23 +83,22 @@ class ResponseSubscriber implements EventSubscriberInterface {
    *   The filter event.
    */
   public function onResponse(FilterResponseEvent $event) {
-    if (!$event->isMasterRequest()) {
+
+    if (!$this->routeMatch->getRouteObject()) {
       return;
     }
 
-    if (!$this->routeMatch->getRouteObject()){
-      return;
-    }
-    
     if (Routes::isJsonApiRequest($this->routeMatch->getRouteObject()->getDefaults())) {
+
       $response = $event->getResponse();
       if ($response instanceof CacheableResponseInterface) {
         $response->getCacheableMetadata()->addCacheContexts(['url.query_args:jsonapi_include']);
       }
       $need_parse = TRUE;
       if ($this->config->get('jsonapi_include.settings')->get('use_include_query')) {
-        $need_parse = !empty($_GET['jsonapi_include']);
+        $need_parse = !empty($event->getRequest()->query->get('jsonapi_include'));
       }
+
       if ($need_parse) {
         $content = $event->getResponse()->getContent();
         if (strpos($content, '{"jsonapi"') === 0) {

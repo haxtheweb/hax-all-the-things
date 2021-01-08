@@ -1,0 +1,12 @@
+name: 'Entity reference test views'
+type: module
+description: 'Provides default views for views entity reference tests.'
+package: Testing
+# version: VERSION
+dependencies:
+ - drupal:views
+
+# Information added by Drupal.org packaging script on 2021-01-07
+version: '9.1.2'
+project: 'drupal'
+datestamp: 1609984457

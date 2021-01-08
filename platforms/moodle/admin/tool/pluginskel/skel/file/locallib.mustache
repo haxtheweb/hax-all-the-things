@@ -1,0 +1,22 @@
+{{!
+    locallib.php
+
+    * component
+    * copyright
+}}
+{{< common/boilerplate_php }}
+{{$ description }}Plugin internal classes, functions and constants are defined here.{{/ description }}
+{{$ package }}{{ component }}{{/ package }}
+{{$ copyright }}{{ copyright }}{{/ copyright }}
+{{/ common/boilerplate_php }}
+{{# self.events }}
+
+/**
+ * Handle the {{{ .event }}} event.
+ *
+ * @param object $event The event object.
+ */
+function {{ .callback }}($event) {
+    return;
+}
+{{/ self.events }}
