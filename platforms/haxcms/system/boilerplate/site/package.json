@@ -1,7 +1,7 @@
 {
-  "name": "haxcms",
-  "version": "0.0.1",
-  "description": "HAXcms microsite dependencies for developer usage",
+  "name": "{{ short }}",
+  "version": "{{ version }}",
+  "description": "{{ description }}",
   "main": "index.html",
   "repository": {
     "type": "git",
@@ -31,7 +31,7 @@
     "@lrnwebcomponents/image-compare-slider": "^2.0.1",
     "@lrnwebcomponents/license-element": "^2.0.1",
     "@lrnwebcomponents/lrn-aside": "^2.0.1",
-    "@lrnwebcomponents/lrn-calendar": "^2.0.1",
+    
     "@lrnwebcomponents/lrn-icons": "^2.0.1",
     "@lrnwebcomponents/lrn-math": "^2.0.1",
     "@lrnwebcomponents/lrn-table": "^2.0.1",
@@ -46,7 +46,6 @@
     "@lrnwebcomponents/multiple-choice": "^2.0.1",
     "@lrnwebcomponents/oer-schema": "^2.0.1",
     "@lrnwebcomponents/outline-player": "^2.0.1",
-    "@lrnwebcomponents/paper-audio-player": "^2.0.1",
     "@lrnwebcomponents/paper-icon-picker": "^2.0.1",
     "@lrnwebcomponents/paper-input-flagged": "^2.0.1",
     "@lrnwebcomponents/pdf-element": "^2.0.1",
@@ -61,10 +60,8 @@
     "@lrnwebcomponents/simple-colors": "^2.0.1",
     "@lrnwebcomponents/simple-concept-network": "^2.0.1",
     "@lrnwebcomponents/stop-note": "^2.0.1",
-    "@lrnwebcomponents/tab-list": "^2.0.1",
     "@lrnwebcomponents/task-list": "^2.0.1",
     "@lrnwebcomponents/video-player": "^2.0.1",
-    "@lrnwebcomponents/wave-player": "^2.0.1",
     "@lrnwebcomponents/wikipedia-query": "^2.0.1",
     "@polymer/app-localize-behavior": "^3.0.1",
     "@polymer/iron-a11y-keys": "^3.0.0",
@@ -97,7 +94,6 @@
     "@vaadin/vaadin-split-layout": "^4.1.0",
     "@vaadin/vaadin-upload": "^4.2.1",
     "@webcomponents/webcomponentsjs": "2.2.10",
-    "paper-collapse-item": "^4.0.4",
     "web-animations-js": "^2.3.1"
   },
   "private": false,
@@ -123,14 +119,15 @@
     "@prettier/plugin-php": "^0.11.0",
     "prettier": "^1.16.4",
     "gulp": "^4.0.2",
-    "gulp-terser": "^1.2.0"
+    "gulp-terser": "^1.2.0",
+    "rollup-plugin-terser": "5.2.0"
   },
   "scripts": {
     "lint": "prettier --check 'system/**/*.php' '*.{html,js,php,yml}'",
     "format": "prettier --write 'system/**/*.php' '*.{html,js,php,yml}'",
-    "build": "polymer build && yarn run terser",
     "terser": "gulp",
-    "dev": "polymer serve --open --entrypoint dist/dev.html",
+    "start": "yarn run dev",
+    "dev": "polymer serve --open --entrypoint dist/dev.html --allow-origin --open-path=/",
     "dev-theme": "cd custom && yarn start"
   }
 }

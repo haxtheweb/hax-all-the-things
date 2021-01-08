@@ -36,14 +36,17 @@ sudo a2dismod php7.2
 sudo a2dismod mpm_prefork
 sudo a2enmod mpm_event
 sudo a2enmod http2
+sudo a2enmod rewrite
 # enable protocol support
-echo "Protocols h2 http/1.1" > /etc/apache2/conf-available/http2.conf
-echo "<Directory /var/www>" > /etc/apache2/conf-available/allowoverrides.conf
-echo "	Options Indexes FollowSymLinks" >> /etc/apache2/conf-available/allowoverrides.conf
-echo "	AllowOverride All" >> /etc/apache2/conf-available/allowoverrides.conf
-echo "	Require all granted" >> /etc/apache2/conf-available/allowoverrides.conf
-echo "</Directory>" >> /etc/apache2/conf-available/allowoverrides.conf
+sudo echo "Protocols h2 http/1.1" > /etc/apache2/conf-available/http2.conf
 sudo a2enconf http2
-sudo a2enconf allowoverrides
-# get this party started
+# make sure we allow for overrides for .htaccess files to work in the CMS area
+sudo cp $DIR/haxcms.conf /etc/apache2/conf-available/haxcms.conf
+sudo a2enconf haxcms
+# get this party started, one of these will work
 sudo service apache2 restart
+sudo systemctl reload apache2
+# basic home user alias stuff for simplier CLI calls
+sudo echo "alias g='git'" >> $homedir/.bashrc
+sudo echo "alias l='ls -laHF'" >> $homedir/.bashrc
+sudo echo "alias haxcms='bash /var/www/html/scripts/haxcms.sh'" >> $homedir/.bashrc

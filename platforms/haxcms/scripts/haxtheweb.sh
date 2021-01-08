@@ -46,12 +46,24 @@ fi
 if [ ! -d "_config/tmp" ]; then
   mkdir _config/tmp
 fi
+if [ ! -d "_config/cache" ]; then
+  mkdir _config/cache
+fi
 if [ ! -d "_config/node_modules" ]; then
   mkdir _config/node_modules
+fi
+if [ ! -d "_config/user" ]; then
+  mkdir _config/user
+fi
+if [ ! -d "_config/user/files" ]; then
+  mkdir _config/user/files
 fi
 # work on config boilerplate
 if [ ! -f "_config/config.json" ]; then
   cp system/boilerplate/systemsetup/config.json _config/config.json
+fi
+if [ ! -f "_config/userData.json" ]; then
+  cp system/boilerplate/systemsetup/userData.json _config/userData.json
 fi
 if [ ! -f "_config/my-custom-elements.js" ]; then
   cp system/boilerplate/systemsetup/my-custom-elements.js _config/my-custom-elements.js
@@ -62,10 +74,16 @@ fi
 if [ ! -f "_config/.htaccess" ]; then
   cp system/boilerplate/systemsetup/.htaccess _config/.htaccess
 fi
+if [ ! -f "_config/user/files/.htaccess" ]; then
+  cp system/boilerplate/systemsetup/.user-files-htaccess _config/user/files/.htaccess
+fi
 # may need to revisit this at some point
 chmod 775 _config
 chmod 777 _config/tmp
+chmod 777 _config/cache
+chmod 777 _config/user/files
 chmod 777 _config/config.json
+chmod 777 _config/userData.json
 chmod 777 _sites
 chmod 775 _published
 chmod 775 _archived
@@ -83,6 +101,9 @@ echo "$(getuuid)" > _config/SALT.txt
 # write private key
 pk="$(getuuid)"
 sed -i "s/HAXTHEWEBPRIVATEKEY/${pk}/g" _config/config.php
+# write refresh private key
+rpk="$(getuuid)"
+sed -i "s/HAXTHEWEBREFRESHPRIVATEKEY/${rpk}/g" _config/config.php
 user=$1
 pass=$2
 # enter a super user name, dun dun dun dunnnnnnn!

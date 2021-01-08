@@ -1,12 +1,1148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <base href="/" />
+  <script>
+// polyfill for forEach
+if ('NodeList' in window && !NodeList.prototype.forEach) {
+  NodeList.prototype.forEach = function (callback, thisArg) {
+    thisArg = thisArg || window;
+    for (var i = 0; i < this.length; i++) {
+      callback.call(thisArg, this[i], i, this);
+    }
+  };
+}
+// polyfill entries in objects
+if (!Object.entries) {
+  Object.entries = function( obj ){
+    var ownProps = Object.keys( obj ),
+        i = ownProps.length,
+        resArray = new Array(i); // preallocate the Array
+    while (i--)
+      resArray[i] = [ownProps[i], obj[ownProps[i]]];
+
+    return resArray;
+  };
+}
+// polyfill is in objects
+if (!Object.is) {
+  Object.defineProperty(Object, "is", {
+    value: function (x, y) {
+      // SameValue algorithm
+      if (x === y) { // Steps 1-5, 7-10
+        // Steps 6.b-6.e: +0 != -0
+        return x !== 0 || 1 / x === 1 / y;
+      } else {
+        // Step 6.a: NaN == NaN
+        return x !== x && y !== y;
+      }
+    }
+  });
+}
+// polyfill find in arrays
+// https://tc39.github.io/ecma262/#sec-array.prototype.find
+if (!Array.prototype.find) {
+  Object.defineProperty(Array.prototype, 'find', {
+    value: function(predicate) {
+      if (this == null) {
+        throw new TypeError('"this" is null or not defined');
+      }
+      var o = Object(this);
+      var len = o.length >>> 0;
+      if (typeof predicate !== 'function') {
+        throw new TypeError('predicate must be a function');
+      }
+      var thisArg = arguments[1];
+      var k = 0;
+      while (k < len) {
+        var kValue = o[k];
+        if (predicate.call(thisArg, kValue, k, o)) {
+          return kValue;
+        }
+        k++;
+      }
+      return undefined;
+    }
+  });
+}
+// polyfill includes in strings
+if (!String.prototype.includes) {
+  String.prototype.includes = function (search, start) {
+    'use strict';
+    if (typeof start !== 'number') {
+        start = 0;
+    }
+
+    if (start + search.length > this.length) {
+        return false;
+    } else {
+        return this.indexOf(search, start) !== -1;
+    }
+  };
+}
+// polyfill includes in arrays
+if (!Array.prototype.includes) {
+  Object.defineProperty(Array.prototype, 'includes', {
+  value: function (searchElement, fromIndex) {
+    if (this == null) {
+      throw new TypeError('"this" is null or not defined');
+    }
+    var o = Object(this);
+    var len = o.length >>> 0;
+    if (len === 0) {
+      return false;
+    }
+    var n = fromIndex | 0;
+    var k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+    function sameValueZero(x, y) {
+      return x === y || (typeof x === 'number' && typeof y === 'number' && isNaN(x) && isNaN(y));
+    }
+    while (k < len) {
+      if (sameValueZero(o[k], searchElement)) {
+        return true;
+      }
+      k++;
+    }
+    return false;
+  }
+  });
+}
+// intersectionObserver polyfill
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the W3C SOFTWARE AND DOCUMENT NOTICE AND LICENSE.
+ *
+ *  https://www.w3.org/Consortium/Legal/2015/copyright-software-and-document
+ *
+ */
+ (function() {
+'use strict';
+
+// Exit early if we're not running in a browser.
+if (typeof window !== 'object') {
+  return;
+}
+
+// Exit early if all IntersectionObserver and IntersectionObserverEntry
+// features are natively supported.
+if ('IntersectionObserver' in window &&
+    'IntersectionObserverEntry' in window &&
+    'intersectionRatio' in window.IntersectionObserverEntry.prototype) {
+
+  // Minimal polyfill for Edge 15's lack of `isIntersecting`
+  // See: https://github.com/w3c/IntersectionObserver/issues/211
+  if (!('isIntersecting' in window.IntersectionObserverEntry.prototype)) {
+    Object.defineProperty(window.IntersectionObserverEntry.prototype,
+      'isIntersecting', {
+      get: function () {
+        return this.intersectionRatio > 0;
+      }
+    });
+  }
+  return;
+}
+
+/**
+ * Returns the embedding frame element, if any.
+ * @param {!Document} doc
+ * @return {!Element}
+ */
+function getFrameElement(doc) {
+  try {
+    return doc.defaultView && doc.defaultView.frameElement || null;
+  } catch (e) {
+    // Ignore the error.
+    return null;
+  }
+}
+
+/**
+ * A local reference to the root document.
+ */
+var document = (function(startDoc) {
+  var doc = startDoc;
+  var frame = getFrameElement(doc);
+  while (frame) {
+    doc = frame.ownerDocument;
+    frame = getFrameElement(doc);
+  }
+  return doc;
+})(window.document);
+
+/**
+ * An IntersectionObserver registry. This registry exists to hold a strong
+ * reference to IntersectionObserver instances currently observing a target
+ * element. Without this registry, instances without another reference may be
+ * garbage collected.
+ */
+var registry = [];
+
+/**
+ * The signal updater for cross-origin intersection. When not null, it means
+ * that the polyfill is configured to work in a cross-origin mode.
+ * @type {function(DOMRect|ClientRect, DOMRect|ClientRect)}
+ */
+var crossOriginUpdater = null;
+
+/**
+ * The current cross-origin intersection. Only used in the cross-origin mode.
+ * @type {DOMRect|ClientRect}
+ */
+var crossOriginRect = null;
+
+
+/**
+ * Creates the global IntersectionObserverEntry constructor.
+ * https://w3c.github.io/IntersectionObserver/#intersection-observer-entry
+ * @param {Object} entry A dictionary of instance properties.
+ * @constructor
+ */
+function IntersectionObserverEntry(entry) {
+  this.time = entry.time;
+  this.target = entry.target;
+  this.rootBounds = ensureDOMRect(entry.rootBounds);
+  this.boundingClientRect = ensureDOMRect(entry.boundingClientRect);
+  this.intersectionRect = ensureDOMRect(entry.intersectionRect || getEmptyRect());
+  this.isIntersecting = !!entry.intersectionRect;
+
+  // Calculates the intersection ratio.
+  var targetRect = this.boundingClientRect;
+  var targetArea = targetRect.width * targetRect.height;
+  var intersectionRect = this.intersectionRect;
+  var intersectionArea = intersectionRect.width * intersectionRect.height;
+
+  // Sets intersection ratio.
+  if (targetArea) {
+    // Round the intersection ratio to avoid floating point math issues:
+    // https://github.com/w3c/IntersectionObserver/issues/324
+    this.intersectionRatio = Number((intersectionArea / targetArea).toFixed(4));
+  } else {
+    // If area is zero and is intersecting, sets to 1, otherwise to 0
+    this.intersectionRatio = this.isIntersecting ? 1 : 0;
+  }
+}
+
+
+/**
+ * Creates the global IntersectionObserver constructor.
+ * https://w3c.github.io/IntersectionObserver/#intersection-observer-interface
+ * @param {Function} callback The function to be invoked after intersection
+ *     changes have queued. The function is not invoked if the queue has
+ *     been emptied by calling the `takeRecords` method.
+ * @param {Object=} opt_options Optional configuration options.
+ * @constructor
+ */
+function IntersectionObserver(callback, opt_options) {
+
+  var options = opt_options || {};
+
+  if (typeof callback != 'function') {
+    throw new Error('callback must be a function');
+  }
+
+  if (
+    options.root &&
+    options.root.nodeType != 1 &&
+    options.root.nodeType != 9
+  ) {
+    throw new Error('root must be a Document or Element');
+  }
+
+  // Binds and throttles `this._checkForIntersections`.
+  this._checkForIntersections = throttle(
+      this._checkForIntersections.bind(this), this.THROTTLE_TIMEOUT);
+
+  // Private properties.
+  this._callback = callback;
+  this._observationTargets = [];
+  this._queuedEntries = [];
+  this._rootMarginValues = this._parseRootMargin(options.rootMargin);
+
+  // Public properties.
+  this.thresholds = this._initThresholds(options.threshold);
+  this.root = options.root || null;
+  this.rootMargin = this._rootMarginValues.map(function(margin) {
+    return margin.value + margin.unit;
+  }).join(' ');
+
+  /** @private @const {!Array<!Document>} */
+  this._monitoringDocuments = [];
+  /** @private @const {!Array<function()>} */
+  this._monitoringUnsubscribes = [];
+}
+
+
+/**
+ * The minimum interval within which the document will be checked for
+ * intersection changes.
+ */
+IntersectionObserver.prototype.THROTTLE_TIMEOUT = 100;
+
+
+/**
+ * The frequency in which the polyfill polls for intersection changes.
+ * this can be updated on a per instance basis and must be set prior to
+ * calling `observe` on the first target.
+ */
+IntersectionObserver.prototype.POLL_INTERVAL = null;
+
+/**
+ * Use a mutation observer on the root element
+ * to detect intersection changes.
+ */
+IntersectionObserver.prototype.USE_MUTATION_OBSERVER = true;
+
+
+/**
+ * Sets up the polyfill in the cross-origin mode. The result is the
+ * updater function that accepts two arguments: `boundingClientRect` and
+ * `intersectionRect` - just as these fields would be available to the
+ * parent via `IntersectionObserverEntry`. This function should be called
+ * each time the iframe receives intersection information from the parent
+ * window, e.g. via messaging.
+ * @return {function(DOMRect|ClientRect, DOMRect|ClientRect)}
+ */
+IntersectionObserver._setupCrossOriginUpdater = function() {
+  if (!crossOriginUpdater) {
+    /**
+     * @param {DOMRect|ClientRect} boundingClientRect
+     * @param {DOMRect|ClientRect} intersectionRect
+     */
+    crossOriginUpdater = function(boundingClientRect, intersectionRect) {
+      if (!boundingClientRect || !intersectionRect) {
+        crossOriginRect = getEmptyRect();
+      } else {
+        crossOriginRect = convertFromParentRect(boundingClientRect, intersectionRect);
+      }
+      registry.forEach(function(observer) {
+        observer._checkForIntersections();
+      });
+    };
+  }
+  return crossOriginUpdater;
+};
+
+
+/**
+ * Resets the cross-origin mode.
+ */
+IntersectionObserver._resetCrossOriginUpdater = function() {
+  crossOriginUpdater = null;
+  crossOriginRect = null;
+};
+
+
+/**
+ * Starts observing a target element for intersection changes based on
+ * the thresholds values.
+ * @param {Element} target The DOM element to observe.
+ */
+IntersectionObserver.prototype.observe = function(target) {
+  var isTargetAlreadyObserved = this._observationTargets.some(function(item) {
+    return item.element == target;
+  });
+
+  if (isTargetAlreadyObserved) {
+    return;
+  }
+
+  if (!(target && target.nodeType == 1)) {
+    throw new Error('target must be an Element');
+  }
+
+  this._registerInstance();
+  this._observationTargets.push({element: target, entry: null});
+  this._monitorIntersections(target.ownerDocument);
+  this._checkForIntersections();
+};
+
+
+/**
+ * Stops observing a target element for intersection changes.
+ * @param {Element} target The DOM element to observe.
+ */
+IntersectionObserver.prototype.unobserve = function(target) {
+  this._observationTargets =
+      this._observationTargets.filter(function(item) {
+        return item.element != target;
+      });
+  this._unmonitorIntersections(target.ownerDocument);
+  if (this._observationTargets.length == 0) {
+    this._unregisterInstance();
+  }
+};
+
+
+/**
+ * Stops observing all target elements for intersection changes.
+ */
+IntersectionObserver.prototype.disconnect = function() {
+  this._observationTargets = [];
+  this._unmonitorAllIntersections();
+  this._unregisterInstance();
+};
+
+
+/**
+ * Returns any queue entries that have not yet been reported to the
+ * callback and clears the queue. This can be used in conjunction with the
+ * callback to obtain the absolute most up-to-date intersection information.
+ * @return {Array} The currently queued entries.
+ */
+IntersectionObserver.prototype.takeRecords = function() {
+  var records = this._queuedEntries.slice();
+  this._queuedEntries = [];
+  return records;
+};
+
+
+/**
+ * Accepts the threshold value from the user configuration object and
+ * returns a sorted array of unique threshold values. If a value is not
+ * between 0 and 1 and error is thrown.
+ * @private
+ * @param {Array|number=} opt_threshold An optional threshold value or
+ *     a list of threshold values, defaulting to [0].
+ * @return {Array} A sorted list of unique and valid threshold values.
+ */
+IntersectionObserver.prototype._initThresholds = function(opt_threshold) {
+  var threshold = opt_threshold || [0];
+  if (!Array.isArray(threshold)) threshold = [threshold];
+
+  return threshold.sort().filter(function(t, i, a) {
+    if (typeof t != 'number' || isNaN(t) || t < 0 || t > 1) {
+      throw new Error('threshold must be a number between 0 and 1 inclusively');
+    }
+    return t !== a[i - 1];
+  });
+};
+
+
+/**
+ * Accepts the rootMargin value from the user configuration object
+ * and returns an array of the four margin values as an object containing
+ * the value and unit properties. If any of the values are not properly
+ * formatted or use a unit other than px or %, and error is thrown.
+ * @private
+ * @param {string=} opt_rootMargin An optional rootMargin value,
+ *     defaulting to '0px'.
+ * @return {Array<Object>} An array of margin objects with the keys
+ *     value and unit.
+ */
+IntersectionObserver.prototype._parseRootMargin = function(opt_rootMargin) {
+  var marginString = opt_rootMargin || '0px';
+  var margins = marginString.split(/\s+/).map(function(margin) {
+    var parts = /^(-?\d*\.?\d+)(px|%)$/.exec(margin);
+    if (!parts) {
+      throw new Error('rootMargin must be specified in pixels or percent');
+    }
+    return {value: parseFloat(parts[1]), unit: parts[2]};
+  });
+
+  // Handles shorthand.
+  margins[1] = margins[1] || margins[0];
+  margins[2] = margins[2] || margins[0];
+  margins[3] = margins[3] || margins[1];
+
+  return margins;
+};
+
+
+/**
+ * Starts polling for intersection changes if the polling is not already
+ * happening, and if the page's visibility state is visible.
+ * @param {!Document} doc
+ * @private
+ */
+IntersectionObserver.prototype._monitorIntersections = function(doc) {
+  var win = doc.defaultView;
+  if (!win) {
+    // Already destroyed.
+    return;
+  }
+  if (this._monitoringDocuments.indexOf(doc) != -1) {
+    // Already monitoring.
+    return;
+  }
+
+  // Private state for monitoring.
+  var callback = this._checkForIntersections;
+  var monitoringInterval = null;
+  var domObserver = null;
+
+  // If a poll interval is set, use polling instead of listening to
+  // resize and scroll events or DOM mutations.
+  if (this.POLL_INTERVAL) {
+    monitoringInterval = win.setInterval(callback, this.POLL_INTERVAL);
+  } else {
+    addEvent(win, 'resize', callback, true);
+    addEvent(doc, 'scroll', callback, true);
+    if (this.USE_MUTATION_OBSERVER && 'MutationObserver' in win) {
+      domObserver = new win.MutationObserver(callback);
+      domObserver.observe(doc, {
+        attributes: true,
+        childList: true,
+        characterData: true,
+        subtree: true
+      });
+    }
+  }
+
+  this._monitoringDocuments.push(doc);
+  this._monitoringUnsubscribes.push(function() {
+    // Get the window object again. When a friendly iframe is destroyed, it
+    // will be null.
+    var win = doc.defaultView;
+
+    if (win) {
+      if (monitoringInterval) {
+        win.clearInterval(monitoringInterval);
+      }
+      removeEvent(win, 'resize', callback, true);
+    }
+
+    removeEvent(doc, 'scroll', callback, true);
+    if (domObserver) {
+      domObserver.disconnect();
+    }
+  });
+
+  // Also monitor the parent.
+  var rootDoc =
+    (this.root && (this.root.ownerDocument || this.root)) || document;
+  if (doc != rootDoc) {
+    var frame = getFrameElement(doc);
+    if (frame) {
+      this._monitorIntersections(frame.ownerDocument);
+    }
+  }
+};
+
+
+/**
+ * Stops polling for intersection changes.
+ * @param {!Document} doc
+ * @private
+ */
+IntersectionObserver.prototype._unmonitorIntersections = function(doc) {
+  var index = this._monitoringDocuments.indexOf(doc);
+  if (index == -1) {
+    return;
+  }
+
+  var rootDoc =
+    (this.root && (this.root.ownerDocument || this.root)) || document;
+
+  // Check if any dependent targets are still remaining.
+  var hasDependentTargets =
+      this._observationTargets.some(function(item) {
+        var itemDoc = item.element.ownerDocument;
+        // Target is in this context.
+        if (itemDoc == doc) {
+          return true;
+        }
+        // Target is nested in this context.
+        while (itemDoc && itemDoc != rootDoc) {
+          var frame = getFrameElement(itemDoc);
+          itemDoc = frame && frame.ownerDocument;
+          if (itemDoc == doc) {
+            return true;
+          }
+        }
+        return false;
+      });
+  if (hasDependentTargets) {
+    return;
+  }
+
+  // Unsubscribe.
+  var unsubscribe = this._monitoringUnsubscribes[index];
+  this._monitoringDocuments.splice(index, 1);
+  this._monitoringUnsubscribes.splice(index, 1);
+  unsubscribe();
+
+  // Also unmonitor the parent.
+  if (doc != rootDoc) {
+    var frame = getFrameElement(doc);
+    if (frame) {
+      this._unmonitorIntersections(frame.ownerDocument);
+    }
+  }
+};
+
+
+/**
+ * Stops polling for intersection changes.
+ * @param {!Document} doc
+ * @private
+ */
+IntersectionObserver.prototype._unmonitorAllIntersections = function() {
+  var unsubscribes = this._monitoringUnsubscribes.slice(0);
+  this._monitoringDocuments.length = 0;
+  this._monitoringUnsubscribes.length = 0;
+  for (var i = 0; i < unsubscribes.length; i++) {
+    unsubscribes[i]();
+  }
+};
+
+
+/**
+ * Scans each observation target for intersection changes and adds them
+ * to the internal entries queue. If new entries are found, it
+ * schedules the callback to be invoked.
+ * @private
+ */
+IntersectionObserver.prototype._checkForIntersections = function() {
+  if (!this.root && crossOriginUpdater && !crossOriginRect) {
+    // Cross origin monitoring, but no initial data available yet.
+    return;
+  }
+
+  var rootIsInDom = this._rootIsInDom();
+  var rootRect = rootIsInDom ? this._getRootRect() : getEmptyRect();
+
+  this._observationTargets.forEach(function(item) {
+    var target = item.element;
+    var targetRect = getBoundingClientRect(target);
+    var rootContainsTarget = this._rootContainsTarget(target);
+    var oldEntry = item.entry;
+    var intersectionRect = rootIsInDom && rootContainsTarget &&
+        this._computeTargetAndRootIntersection(target, targetRect, rootRect);
+
+    var rootBounds = null;
+    if (!this._rootContainsTarget(target)) {
+      rootBounds = getEmptyRect();
+    } else if (!crossOriginUpdater || this.root) {
+      rootBounds = rootRect;
+    }
+
+    var newEntry = item.entry = new IntersectionObserverEntry({
+      time: now(),
+      target: target,
+      boundingClientRect: targetRect,
+      rootBounds: rootBounds,
+      intersectionRect: intersectionRect
+    });
+
+    if (!oldEntry) {
+      this._queuedEntries.push(newEntry);
+    } else if (rootIsInDom && rootContainsTarget) {
+      // If the new entry intersection ratio has crossed any of the
+      // thresholds, add a new entry.
+      if (this._hasCrossedThreshold(oldEntry, newEntry)) {
+        this._queuedEntries.push(newEntry);
+      }
+    } else {
+      // If the root is not in the DOM or target is not contained within
+      // root but the previous entry for this target had an intersection,
+      // add a new record indicating removal.
+      if (oldEntry && oldEntry.isIntersecting) {
+        this._queuedEntries.push(newEntry);
+      }
+    }
+  }, this);
+
+  if (this._queuedEntries.length) {
+    this._callback(this.takeRecords(), this);
+  }
+};
+
+
+/**
+ * Accepts a target and root rect computes the intersection between then
+ * following the algorithm in the spec.
+ * TODO(philipwalton): at this time clip-path is not considered.
+ * https://w3c.github.io/IntersectionObserver/#calculate-intersection-rect-algo
+ * @param {Element} target The target DOM element
+ * @param {Object} targetRect The bounding rect of the target.
+ * @param {Object} rootRect The bounding rect of the root after being
+ *     expanded by the rootMargin value.
+ * @return {?Object} The final intersection rect object or undefined if no
+ *     intersection is found.
+ * @private
+ */
+IntersectionObserver.prototype._computeTargetAndRootIntersection =
+    function(target, targetRect, rootRect) {
+  // If the element isn't displayed, an intersection can't happen.
+  if (window.getComputedStyle(target).display == 'none') return;
+
+  var intersectionRect = targetRect;
+  var parent = getParentNode(target);
+  var atRoot = false;
+
+  while (!atRoot && parent) {
+    var parentRect = null;
+    var parentComputedStyle = parent.nodeType == 1 ?
+        window.getComputedStyle(parent) : {};
+
+    // If the parent isn't displayed, an intersection can't happen.
+    if (parentComputedStyle.display == 'none') return null;
+
+    if (parent == this.root || parent.nodeType == /* DOCUMENT */ 9) {
+      atRoot = true;
+      if (parent == this.root || parent == document) {
+        if (crossOriginUpdater && !this.root) {
+          if (!crossOriginRect ||
+              crossOriginRect.width == 0 && crossOriginRect.height == 0) {
+            // A 0-size cross-origin intersection means no-intersection.
+            parent = null;
+            parentRect = null;
+            intersectionRect = null;
+          } else {
+            parentRect = crossOriginRect;
+          }
+        } else {
+          parentRect = rootRect;
+        }
+      } else {
+        // Check if there's a frame that can be navigated to.
+        var frame = getParentNode(parent);
+        var frameRect = frame && getBoundingClientRect(frame);
+        var frameIntersect =
+            frame &&
+            this._computeTargetAndRootIntersection(frame, frameRect, rootRect);
+        if (frameRect && frameIntersect) {
+          parent = frame;
+          parentRect = convertFromParentRect(frameRect, frameIntersect);
+        } else {
+          parent = null;
+          intersectionRect = null;
+        }
+      }
+    } else {
+      // If the element has a non-visible overflow, and it's not the <body>
+      // or <html> element, update the intersection rect.
+      // Note: <body> and <html> cannot be clipped to a rect that's not also
+      // the document rect, so no need to compute a new intersection.
+      var doc = parent.ownerDocument;
+      if (parent != doc.body &&
+          parent != doc.documentElement &&
+          parentComputedStyle.overflow != 'visible') {
+        parentRect = getBoundingClientRect(parent);
+      }
+    }
+
+    // If either of the above conditionals set a new parentRect,
+    // calculate new intersection data.
+    if (parentRect) {
+      intersectionRect = computeRectIntersection(parentRect, intersectionRect);
+    }
+    if (!intersectionRect) break;
+    parent = parent && getParentNode(parent);
+  }
+  return intersectionRect;
+};
+
+
+/**
+ * Returns the root rect after being expanded by the rootMargin value.
+ * @return {ClientRect} The expanded root rect.
+ * @private
+ */
+IntersectionObserver.prototype._getRootRect = function() {
+  var rootRect;
+  if (this.root && !isDoc(this.root)) {
+    rootRect = getBoundingClientRect(this.root);
+  } else {
+    // Use <html>/<body> instead of window since scroll bars affect size.
+    var doc = isDoc(this.root) ? this.root : document;
+    var html = doc.documentElement;
+    var body = doc.body;
+    rootRect = {
+      top: 0,
+      left: 0,
+      right: html.clientWidth || body.clientWidth,
+      width: html.clientWidth || body.clientWidth,
+      bottom: html.clientHeight || body.clientHeight,
+      height: html.clientHeight || body.clientHeight
+    };
+  }
+  return this._expandRectByRootMargin(rootRect);
+};
+
+
+/**
+ * Accepts a rect and expands it by the rootMargin value.
+ * @param {DOMRect|ClientRect} rect The rect object to expand.
+ * @return {ClientRect} The expanded rect.
+ * @private
+ */
+IntersectionObserver.prototype._expandRectByRootMargin = function(rect) {
+  var margins = this._rootMarginValues.map(function(margin, i) {
+    return margin.unit == 'px' ? margin.value :
+        margin.value * (i % 2 ? rect.width : rect.height) / 100;
+  });
+  var newRect = {
+    top: rect.top - margins[0],
+    right: rect.right + margins[1],
+    bottom: rect.bottom + margins[2],
+    left: rect.left - margins[3]
+  };
+  newRect.width = newRect.right - newRect.left;
+  newRect.height = newRect.bottom - newRect.top;
+
+  return newRect;
+};
+
+
+/**
+ * Accepts an old and new entry and returns true if at least one of the
+ * threshold values has been crossed.
+ * @param {?IntersectionObserverEntry} oldEntry The previous entry for a
+ *    particular target element or null if no previous entry exists.
+ * @param {IntersectionObserverEntry} newEntry The current entry for a
+ *    particular target element.
+ * @return {boolean} Returns true if a any threshold has been crossed.
+ * @private
+ */
+IntersectionObserver.prototype._hasCrossedThreshold =
+    function(oldEntry, newEntry) {
+
+  // To make comparing easier, an entry that has a ratio of 0
+  // but does not actually intersect is given a value of -1
+  var oldRatio = oldEntry && oldEntry.isIntersecting ?
+      oldEntry.intersectionRatio || 0 : -1;
+  var newRatio = newEntry.isIntersecting ?
+      newEntry.intersectionRatio || 0 : -1;
+
+  // Ignore unchanged ratios
+  if (oldRatio === newRatio) return;
+
+  for (var i = 0; i < this.thresholds.length; i++) {
+    var threshold = this.thresholds[i];
+
+    // Return true if an entry matches a threshold or if the new ratio
+    // and the old ratio are on the opposite sides of a threshold.
+    if (threshold == oldRatio || threshold == newRatio ||
+        threshold < oldRatio !== threshold < newRatio) {
+      return true;
+    }
+  }
+};
+
+
+/**
+ * Returns whether or not the root element is an element and is in the DOM.
+ * @return {boolean} True if the root element is an element and is in the DOM.
+ * @private
+ */
+IntersectionObserver.prototype._rootIsInDom = function() {
+  return !this.root || containsDeep(document, this.root);
+};
+
+
+/**
+ * Returns whether or not the target element is a child of root.
+ * @param {Element} target The target element to check.
+ * @return {boolean} True if the target element is a child of root.
+ * @private
+ */
+IntersectionObserver.prototype._rootContainsTarget = function(target) {
+  var rootDoc =
+    (this.root && (this.root.ownerDocument || this.root)) || document;
+  return (
+    containsDeep(rootDoc, target) &&
+    (!this.root || rootDoc == target.ownerDocument)
+  );
+};
+
+
+/**
+ * Adds the instance to the global IntersectionObserver registry if it isn't
+ * already present.
+ * @private
+ */
+IntersectionObserver.prototype._registerInstance = function() {
+  if (registry.indexOf(this) < 0) {
+    registry.push(this);
+  }
+};
+
+
+/**
+ * Removes the instance from the global IntersectionObserver registry.
+ * @private
+ */
+IntersectionObserver.prototype._unregisterInstance = function() {
+  var index = registry.indexOf(this);
+  if (index != -1) registry.splice(index, 1);
+};
+
+
+/**
+ * Returns the result of the performance.now() method or null in browsers
+ * that don't support the API.
+ * @return {number} The elapsed time since the page was requested.
+ */
+function now() {
+  return window.performance && performance.now && performance.now();
+}
+
+
+/**
+ * Throttles a function and delays its execution, so it's only called at most
+ * once within a given time period.
+ * @param {Function} fn The function to throttle.
+ * @param {number} timeout The amount of time that must pass before the
+ *     function can be called again.
+ * @return {Function} The throttled function.
+ */
+function throttle(fn, timeout) {
+  var timer = null;
+  return function () {
+    if (!timer) {
+      timer = setTimeout(function() {
+        fn();
+        timer = null;
+      }, timeout);
+    }
+  };
+}
+
+
+/**
+ * Adds an event handler to a DOM node ensuring cross-browser compatibility.
+ * @param {Node} node The DOM node to add the event handler to.
+ * @param {string} event The event name.
+ * @param {Function} fn The event handler to add.
+ * @param {boolean} opt_useCapture Optionally adds the even to the capture
+ *     phase. Note: this only works in modern browsers.
+ */
+function addEvent(node, event, fn, opt_useCapture) {
+  if (typeof node.addEventListener == 'function') {
+    node.addEventListener(event, fn, opt_useCapture || false);
+  }
+  else if (typeof node.attachEvent == 'function') {
+    node.attachEvent('on' + event, fn);
+  }
+}
+
+
+/**
+ * Removes a previously added event handler from a DOM node.
+ * @param {Node} node The DOM node to remove the event handler from.
+ * @param {string} event The event name.
+ * @param {Function} fn The event handler to remove.
+ * @param {boolean} opt_useCapture If the event handler was added with this
+ *     flag set to true, it should be set to true here in order to remove it.
+ */
+function removeEvent(node, event, fn, opt_useCapture) {
+  if (typeof node.removeEventListener == 'function') {
+    node.removeEventListener(event, fn, opt_useCapture || false);
+  }
+  else if (typeof node.detatchEvent == 'function') {
+    node.detatchEvent('on' + event, fn);
+  }
+}
+
+
+/**
+ * Returns the intersection between two rect objects.
+ * @param {Object} rect1 The first rect.
+ * @param {Object} rect2 The second rect.
+ * @return {?Object|?ClientRect} The intersection rect or undefined if no
+ *     intersection is found.
+ */
+function computeRectIntersection(rect1, rect2) {
+  var top = Math.max(rect1.top, rect2.top);
+  var bottom = Math.min(rect1.bottom, rect2.bottom);
+  var left = Math.max(rect1.left, rect2.left);
+  var right = Math.min(rect1.right, rect2.right);
+  var width = right - left;
+  var height = bottom - top;
+
+  return (width >= 0 && height >= 0) && {
+    top: top,
+    bottom: bottom,
+    left: left,
+    right: right,
+    width: width,
+    height: height
+  } || null;
+}
+
+
+/**
+ * Shims the native getBoundingClientRect for compatibility with older IE.
+ * @param {Element} el The element whose bounding rect to get.
+ * @return {DOMRect|ClientRect} The (possibly shimmed) rect of the element.
+ */
+function getBoundingClientRect(el) {
+  var rect;
+
+  try {
+    rect = el.getBoundingClientRect();
+  } catch (err) {
+    // Ignore Windows 7 IE11 "Unspecified error"
+    // https://github.com/w3c/IntersectionObserver/pull/205
+  }
+
+  if (!rect) return getEmptyRect();
+
+  // Older IE
+  if (!(rect.width && rect.height)) {
+    rect = {
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+      left: rect.left,
+      width: rect.right - rect.left,
+      height: rect.bottom - rect.top
+    };
+  }
+  return rect;
+}
+
+
+/**
+ * Returns an empty rect object. An empty rect is returned when an element
+ * is not in the DOM.
+ * @return {ClientRect} The empty rect.
+ */
+function getEmptyRect() {
+  return {
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: 0,
+    height: 0
+  };
+}
+
+
+/**
+ * Ensure that the result has all of the necessary fields of the DOMRect.
+ * Specifically this ensures that `x` and `y` fields are set.
+ *
+ * @param {?DOMRect|?ClientRect} rect
+ * @return {?DOMRect}
+ */
+function ensureDOMRect(rect) {
+  // A `DOMRect` object has `x` and `y` fields.
+  if (!rect || 'x' in rect) {
+    return rect;
+  }
+  // A IE's `ClientRect` type does not have `x` and `y`. The same is the case
+  // for internally calculated Rect objects. For the purposes of
+  // `IntersectionObserver`, it's sufficient to simply mirror `left` and `top`
+  // for these fields.
+  return {
+    top: rect.top,
+    y: rect.top,
+    bottom: rect.bottom,
+    left: rect.left,
+    x: rect.left,
+    right: rect.right,
+    width: rect.width,
+    height: rect.height
+  };
+}
+
+
+/**
+ * Inverts the intersection and bounding rect from the parent (frame) BCR to
+ * the local BCR space.
+ * @param {DOMRect|ClientRect} parentBoundingRect The parent's bound client rect.
+ * @param {DOMRect|ClientRect} parentIntersectionRect The parent's own intersection rect.
+ * @return {ClientRect} The local root bounding rect for the parent's children.
+ */
+function convertFromParentRect(parentBoundingRect, parentIntersectionRect) {
+  var top = parentIntersectionRect.top - parentBoundingRect.top;
+  var left = parentIntersectionRect.left - parentBoundingRect.left;
+  return {
+    top: top,
+    left: left,
+    height: parentIntersectionRect.height,
+    width: parentIntersectionRect.width,
+    bottom: top + parentIntersectionRect.height,
+    right: left + parentIntersectionRect.width
+  };
+}
+
+
+/**
+ * Checks to see if a parent element contains a child element (including inside
+ * shadow DOM).
+ * @param {Node} parent The parent element.
+ * @param {Node} child The child element.
+ * @return {boolean} True if the parent node contains the child node.
+ */
+function containsDeep(parent, child) {
+  var node = child;
+  while (node) {
+    if (node == parent) return true;
+
+    node = getParentNode(node);
+  }
+  return false;
+}
+
+
+/**
+ * Gets the parent node of an element or its host element if the parent node
+ * is a shadow root.
+ * @param {Node} node The node whose parent to get.
+ * @return {Node|null} The parent node or null if no parent exists.
+ */
+function getParentNode(node) {
+  var parent = node.parentNode;
+
+  if (node.nodeType == /* DOCUMENT */ 9 && node != document) {
+    // If this node is a document node, look for the embedding frame.
+    return getFrameElement(node);
+  }
+
+  // If the parent has element that is assigned through shadow root slot
+  if (parent && parent.assignedSlot) {
+    parent = parent.assignedSlot.parentNode
+  }
+
+  if (parent && parent.nodeType == 11 && parent.host) {
+    // If the parent is a shadow root, return the host element.
+    return parent.host;
+  }
+
+  return parent;
+}
+
+/**
+ * Returns true if `node` is a Document.
+ * @param {!Node} node
+ * @returns {boolean}
+ */
+function isDoc(node) {
+  return node && node.nodeType === 9;
+}
+
+
+// Exposes the constructors globally.
+window.IntersectionObserver = IntersectionObserver;
+window.IntersectionObserverEntry = IntersectionObserverEntry;
+
+}());
+  </script>
+  <script src="node_modules/web-animations-js/web-animations-next-lite.min.js"></script>
+  <script src="node_modules/fetch-ie8/fetch.js"></script>
+  <script src="node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js"></script>
+  <script src="node_modules/@lrnwebcomponents/deduping-fix/deduping-fix.js"></script>
+  <link rel="preload" href="./dist/build.js" as="script" crossorigin="anonymous">
+  <link rel="preload" href="./custom/src/custom.js" as="script" crossorigin="anonymous">
+  <link rel="preload" href="./node_modules/@lrnwebcomponents/haxcms-elements/lib/core/haxcms-site-builder.js"
+    as="script" crossorigin="anonymous">
+  <link rel="preload" href="./dist/my-custom-elements.js" as="script" crossorigin="anonymous">
+  <link rel="preload" href="./node_modules/@lrnwebcomponents/haxcms-elements/lib/base.css" as="style">
+  <link rel="preload" href="./theme/theme.css" as="style">
   <meta charset="utf-8">
-  <meta name="generator" content="HAXCMS">
-  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
-  <title>HAXCMS</title>
+  <link rel="preconnect" crossorigin href="https://fonts.googleapis.com">
+  <link rel="preconnect" crossorigin href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" crossorigin href="https://i.creativecommons.org">
+  <link rel="preconnect" crossorigin href="https://licensebuttons.net">
+  <meta name="generator" content="HAXcms">
+  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes"><title>HAXCMS</title>
   <meta name="description" content="My HAXCMS site description">
-  <base href="../" />
   
   <link rel="icon" href="assets/favicon.ico">
   
@@ -40,358 +1176,185 @@
   <link rel="preconnect" crossorigin href="https://i.creativecommons.org">
   <link rel="preconnect" crossorigin href="https://licensebuttons.net">
   <link rel="prefetch" href="site.json">
+
+  <link rel="stylesheet" href="/node_modules/@lrnwebcomponents/haxcms-elements/lib/base.css" />
+  <link rel="stylesheet" href="./theme/theme.css" />
+  <script>
+    window.process = window.process || {
+      env: {
+        NODE_ENV: "production"
+      }
+    };
+  </script>
   <style>
     body {
       margin: 0;
-      min-height: 100vh;
+      min-height: 98vh;
     }
+  </style>
+  <style id="loadingstyles">
     haxcms-site-builder {
-      transition: all 1s linear;
       display: block;
     }
-    haxcms-site-builder:not(:defined) div.loading {
-      width: 100vw;
-      display: block;
-      position: initial;
-      height: 100vh;
-      background: orange;
-    }
-    haxcms-site-builder:not(:defined) div {
-      font-size: 6vw;
-      line-height: 1;
-      margin: 0 auto;
-      top: calc(50vh - 8vw);
-      width: 100%;
-      justify-content: center;
-      display: grid;
-      text-align: center;
-      padding: 0;
-      position: relative;
-      font-family: "Courier New", Courier, monospace;
-      color: black;
-    }
-    body[no-js] haxcms-site-builder{
+    body[no-js] haxcms-site-builder {
       display: none !important;
     }
-
-    :root {
-      /* HAXCMS Base Styles*/
-      --haxcms-base-styles-a-color: var(--odl-haxtheme-a-color);
-      --haxcms-base-styles-a-color-active: var(--odl-haxtheme-a-hover-color);
-      --haxcms-base-styles-a-font-weight: var(--odl-haxtheme-font-weight);
-      --haxcms-base-styles-a-font-weight-active: var(--odl-haxtheme-font-weight);
-      --haxcms-base-styles-body-line-height: var(--odl-haxtheme-line-height);
-      /* Theme Colors */
-      --odl-haxtheme-accent-color-1: #363533;
-      --odl-haxtheme-accent-color-2: #e2801e;
-      --odl-haxtheme-accent-color-3: #dcdcdc;
-      --odl-haxtheme-accent-color-4: #ffffff;
-      /* Theme Styles */
-      --odl-haxtheme-site-breadcrumb-margin: 10px 0 0 0;
-      --odl-haxtheme-header-border-left: solid;
-      --odl-haxtheme-header-border-left-width: 4px;
-      --odl-haxtheme-sidebar-wrap-width: 25%;
-      --odl-haxtheme-sidebar-wrap-width-mobile: 100%;
-      --odl-haxtheme-sidebar-wrap-margin: 45px 0 0 0;
-      --odl-haxtheme-sidebar-wrap-margin-mobile: 10px 0 0 0;
-      --odl-haxtheme-sidebar-wrap-border-left: solid;
-      --odl-haxtheme-sidebar-wrap-border-left-mobile: none;
-      --odl-haxtheme-sidebar-wrap-border-left-width: 2px;
-      --odl-haxtheme-sidebar-wrap-height: 600px;
-      --odl-haxtheme-sidebar-wrap-height-mobile: auto;
-      --odl-haxtheme-sidebar-wrap-padding: 0 0 0 20px;
-      --odl-haxtheme-sidebar-wrap-padding-mobile: 0;
-      /* Font Styles */
-      --odl-haxtheme-font-color: #000;
-      --odl-haxtheme-font-size: 18px;
-      --odl-haxtheme-font-weight: 300;
-      --odl-haxtheme-line-height: 1.4;
-      --odl-haxtheme-text-transform: uppercase;
-      /* Link Styles */
-      --odl-haxtheme-a-color: #21b9f3;
-      --odl-haxtheme-a-text-decoration: none;
-      --odl-haxtheme-a-font-weight: normal;
-      --odl-haxtheme-a-font-size: 18px;
-      --odl-haxtheme-a-hover-color: #2196f3;
-      --odl-haxtheme-a-hover-text-decoration: none;
-      /* Header Styles */
-      --odl-haxtheme-h1-font-weight: 400;
-      --odl-haxtheme-h1-font-size: 36px;
-      --odl-haxtheme-h2-font-weight: 100;
-      --odl-haxtheme-h2-font-size: 26px;
-      --odl-haxtheme-h3-font-weight: 100;
-      --odl-haxtheme-h3-font-size: 22px;
-      /* Content: Team */
-      --haxtheme-team-a-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      /* Content: About */
-      
-      /* Content: Blog */
-      --haxtheme-blog-accent-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-blog-taxonomy-a-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-blog-taxonomy-a-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-blog-taxonomy-a-hover: var(--odl-haxtheme-a-font-weight);
-      --haxtheme-blog-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      --haxtheme-blog-h1-font-size: var(--odl-haxtheme-h1-font-size);
-      --haxtheme-blog-h2-font-weight: var(--odl-haxtheme-h2-font-weight);
-      --haxtheme-blog-h2-font-size: var(--odl-haxtheme-h2-font-size);
-      --haxtheme-blog-contentcontainer-font-size: var(--odl-haxtheme-font-size);
-      --haxtheme-blog-contentcontainer-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-blog-contentcontainer-line-height: var(--odl-haxtheme-line-height);
-      --haxtheme-blog-sidebar-wrap-border-left-color: var(--odl-haxtheme-accent-color-3);
-      --haxtheme-blog-publish-credentials-border-left: var(--odl-haxtheme-header-border-left);
-      --haxtheme-blog-publish-credentials-border-left-width: var(--odl-haxtheme-header-border-left-width);
-      --haxtheme-blog-author-a-color: var(--odl-haxtheme-font-color);
-      --haxtheme-blog-author-a-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      --haxtheme-blog-author-a-hover: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-blog-taxonomy-a-text-decoration: var(--odl-haxtheme-a-hover-text-decoration);
-      --haxtheme-blog-site-breadcrumb-margin: var(--odl-haxtheme-site-breadcrumb-margin);
-      --haxtheme-blog-sidebar-wrap-width: var(--odl-haxtheme-sidebar-wrap-width);
-      --haxtheme-blog-sidebar-wrap-margin: var(--odl-haxtheme-sidebar-wrap-margin);
-      --haxtheme-blog-sidebar-wrap-border-left: var(--odl-haxtheme-sidebar-wrap-border-left);
-      --haxtheme-blog-sidebar-wrap-border-left-width: var(--odl-haxtheme-sidebar-wrap-border-left-width);
-      --haxtheme-blog-sidebar-wrap-border-left-color: var(--odl-haxtheme-accent-color-3);
-      --haxtheme-blog-sidebar-wrap-height: var(--odl-haxtheme-sidebar-wrap-height);
-      --haxtheme-blog-sidebar-wrap-padding: var(--odl-haxtheme-sidebar-wrap-padding);
-      --haxtheme-blog-side-bar-wrap-width-mobile: var(--odl-haxtheme-sidebar-wrap-width-mobile);
-      --haxtheme-blog-sidebar-wrap-height-mobile: var(--odl-haxtheme-sidebar-wrap-height-mobile);
-      --haxtheme-blog-sidebar-wrap-border-mobile: var(--odl-haxtheme-sidebar-wrap-border-left-mobile)
-      --haxtheme-blog-sidebar-wrap-padding-mobile: var(--odl-haxtheme-sidebar-wrap-padding-mobile);
-      --haxtheme-blog-sidebar-wrap-margin-mobile: var(--odl-haxtheme-sidebar-wrap-margin-mobile);
-      /* Content: News */
-      --haxtheme-news-sidebar-wrap-width: var(--odl-haxtheme-sidebar-wrap-width);
-      --haxtheme-news-sidebar-wrap-height: var(--odl-haxtheme-sidebar-wrap-height);
-      --haxtheme-news-sidebar-wrap-margin: var(--odl-haxtheme-sidebar-wrap-margin);
-      --haxtheme-news-sidebar-wrap-border-left: var(--odl-haxtheme-sidebar-wrap-border-left);
-      --haxtheme-news-sidebar-wrap-border-left-width: var(--odl-haxtheme-sidebar-wrap-border-left-width);
-      --haxtheme-news-sidebar-wrap-border-left-color: var(--odl-haxtheme-accent-color-3);
-      --haxtheme-news-sidebar-wrap-padding: var(--odl-haxtheme-sidebar-wrap-padding);
-      --haxtheme-news-sidebar-wrap-width-mobile: var(--odl-haxtheme-sidebar-wrap-width-mobile);
-      --haxtheme-news-sidebar-wrap-height-mobile: var(--odl-haxtheme-sidebar-wrap-height-mobile);
-      --haxtheme-news-sidebar-wrap-border-left-mobile: var(--odl-haxtheme-sidebar-wrap-border-left-mobile);
-      --haxtheme-news-sidebar-wrap-padding-mobile: var(--odl-haxtheme-sidebar-wrap-padding-mobile);
-      --haxtheme-news-sidebar-wrap-margin-mobile: var(--odl-haxtheme-sidebar-wrap-margin-mobile);
-      /* Content: Course */
-      --haxtheme-course-h1-font-size: var(--odl-haxtheme-h1-font-size);
-      --haxtheme-course-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      --haxtheme-course-site-breadcrumb-margin: var(--odl-haxtheme-site-breadcrumb-margin);
-      --haxtheme-course-sidebar-wrap-width: var(--odl-haxtheme-sidebar-wrap-width);
-      --haxtheme-course-sidebar-wrap-margin: var(--odl-haxtheme-sidebar-wrap-margin);
-      --haxtheme-course-sidebar-wrap-border-left: var(--odl-haxtheme-sidebar-wrap-border-left);
-      --haxtheme-course-sidebar-wrap-border-left-width: var(--odl-haxtheme-sidebar-wrap-border-left-width);
-      --haxtheme-course-sidebar-wrap-border-left-color: var(--odl-haxtheme-accent-color-3);
-      --haxtheme-course-sidebar-wrap-height: var(--odl-haxtheme-sidebar-wrap-height);
-      --haxtheme-course-sidebar-wrap-padding: var(--odl-haxtheme-sidebar-wrap-padding);
-      --haxtheme-course-sidebar-wrap-width-mobile: var(--odl-haxtheme-sidebar-wrap-width-mobile);
-      --haxtheme-course-sidebar-wrap-height-mobile: var(--odl-haxtheme-sidebar-wrap-height-mobile);
-      --haxtheme-course-sidebar-wrap-border-mobile: var(--odl-haxtheme-sidebar-wrap-border-left-mobile);
-      --haxtheme-course-sidebar-wrap-padding-mobile: var(--odl-haxtheme-sidebar-wrap-padding-mobile);
-      --haxtheme-course-sidebar-wrap-margin-mobile: var(--odl-haxtheme-sidebar-wrap-margin-mobile);
-      --haxtheme-course-iron-icon-fill: var(--odl-haxtheme-accent-color-1);
-      /* Content: Syllabus */
-      --haxtheme-syllabus-accent-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-syllabus-a-color: var(--odl-haxtheme-a-color);
-      --haxtheme-syllabus-a-hover-color: var(--odl-haxtheme-a-hover-color);
-      --haxtheme-syllabus-a-hover-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      --haxtheme-syllabus-a-hover-text-decoration: var(--odl-haxtheme-a-hover-text-decoration);
-      --haxtheme-syllabus-syllabus-title-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      --haxtheme-syllabus-h2-font-weight: var(--odl-haxtheme-h2-font-weight);
-      --haxtheme-syllabus-h2-font-size: var(--odl-haxtheme-h2-font-size);
-      --haxtheme-syllabus-policy-h2-color: var(--odl-haxtheme-accent-color-1);
-      --haxtheme-syllabus-policy-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-syllabus-policy-font-size: var(--odl-haxtheme-font-size);
-      --haxtheme-syllabus-policy-line-height: var(--odl-haxtheme-line-height);
-      --haxtheme-syllabus-h3-font-weight: var(--odl-haxtheme-h3-font-weight);
-      --haxtheme-syllabus-h3-font-size: var(--odl-haxtheme-h3-font-size);
-      --haxtheme-syllabus-header-border-left: var(--odl-haxtheme-header-border-left);
-      --haxtheme-syllabus-header-border-left-width: var(--odl-haxtheme-header-border-left-width);
-      --haxtheme-syllabus-site-breadcrumb-margin: var(--odl-haxtheme-site-breadcrumb-margin);
-      /* Content: Courses */
-      --haxtheme-courses-course-card-border-color: var(--odl-haxtheme-accent-color-3);
-      --haxtheme-course-h1-text-transform: var(--odl-haxtheme-text-transform);
-      --haxtheme-course-h2-font-size: var(--odl-haxtheme-h2-font-size);
-      --haxtheme-course-h2-font-weight: var(--odl-haxtheme-h2-font-weight);
-      --haxtheme-course-course-header-border-left: var(--odl-haxtheme-header-border-left);
-      --haxtheme-course-course-header-border-left-width: var(--odl-haxtheme-header-border-left-width);
-      --haxtheme-course-course-header-border-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-course-description-font-size: var(--odl-haxtheme-font-size);
-      --haxtheme-course-description-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-course-description-line-height: var(--odl-haxtheme-line-height);
-      /* Elements: Course Card */
-      --haxtheme-course-card-course-number-text-transform: var(--odl-haxtheme-text-transform);
-      --haxtheme-course-card-course-name-font-size: var(--odl-haxtheme-font-size);
-      --haxtheme-course-card-a-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      --haxtheme-course-card-a-color: var(--odl-haxtheme-accent-color-1);
-      --haxtheme-course-card-course-icon-background-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-course-card-course-icon-border-color: var(--odl-haxtheme-accent-color-1);
-      --haxtheme-course-card-iron-icon-color: var(--odl-haxtheme-accent-color-1);
-      /* Elements: News Feed */
-      --haxtheme-news-feed-feed-header-h2-background-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-news-feed-feed-header-h2-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-news-feed-card-wrap-border-color: var(--odl-haxtheme-accent-color-3);
-      --haxtheme-news-feed-card-wrap-border-bottom-color-mobile: var(--odl-haxtheme-accent-color-3);
-      --haxtheme-news-feed-card-heading-wrap-border-left: var(--odl-haxtheme-header-border-left);
-      --haxtheme-news-feed-card-heading-wrap-border-left-width: var(--odl-haxtheme-header-border-left-width);
-      --haxtheme-news-feed-card-heading-wrap-border-left-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-news-feed-card-heading-h1-color: var(--odl-haxtheme-accent-color-1);
-      --haxtheme-news-feed-card-heading-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      --haxtheme-news-feed-card-heading-h1-hover-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-news-feed-card-heading-a-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      --haxtheme-news-feed-card-description-font-size: var(--odl-haxtheme-font-size);
-      --haxtheme-news-feed-card-description-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-news-feed-card-description-line-height: var(--odl-haxtheme-line-height);
-      --haxtheme-news-feed-action-button-a-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      --haxtheme-news-feed-paper-button-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-news-feed-paper-button-color-active: var(--odl-haxtheme-accent-color-1);
-      /* Elements: Page Feature */
-      --haxtheme-page-feature-a-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      --haxtheme-page-feature-h1-font-size: var(--odl-haxtheme-h1-font-size);
-      --haxtheme-page-feature-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      --haxtheme-page-feature-h2-font-weight: var(--odl-haxtheme-h2-font-weight);
-      --haxtheme-page-feature-wrap-background-color: var(--odl-haxtheme-accent-color-1);
-      --haxtheme-page-feature-feature-description-wrap-background-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-page-feature-feature-description-wrap-box-shadow-color: var(--odl-haxtheme-accent-color-1);
-      --haxtheme-page-feature-title-wrap-border-left: var(--odl-haxtheme-header-border-left);
-      --haxtheme-page-feature-title-wrap-border-left-width: var(--odl-haxtheme-header-border-left-width);
-      --haxtheme-page-feature-title-wrap-border-left-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-page-feature-description-font-size: var(--odl-haxtheme-font-size);
-      --haxtheme-page-feature-description-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-page-feature-description-line-height: var(--odl-haxtheme-line-height);
-      --haxtheme-page-feature-sub-info-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-page-feature-paper-button-feature-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-page-feature-paper-button-feature-color-active: var(--odl-haxtheme-accent-color-1);
-      --haxtheme-page-feature-border-border-top-color: var(--odl-haxtheme-accent-color-2);
-      /* Elements: Promo-Tile */
-      --promo-tile-a-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      --promo-tile-back-card-background-color: var(--odl-haxtheme-accent-color-2);
-      --promo-tile-front-title-h1-color: var(--odl-haxtheme-accent-color-4);
-      --promo-tile-front-title-h1-font-size: var(--odl-haxtheme-h1-font-size);
-      --promo-tile-front-title-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      --promo-tile-front-title-h1-text-shadow-color: var(--odl-haxtheme-accent-color-1);
-      --promo-tile-back-title-h1-color: var(--odl-haxtheme-accent-color-4);
-      --promo-tile-back-title-h1-font-size: var(--odl-haxtheme-h1-font-size);
-      --promo-tile-back-title-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      --promo-tile-back-content-font-color: var(--odl-haxtheme-accent-color-4);
-      --promo-tile-back-content-font-size: var(--odl-haxtheme-font-size);
-      --promo-tile-back-content-font-weight: var(--odl-haxtheme-font-weight);
-      --promo-tile-back-content-line-height: var(--odl-haxtheme-line-height);
-      --promo-tile-paper-button-learn-font-size: var(--odl-haxtheme-font-size);
-      --promo-tile-paper-button-learn-font-color: var(--odl-haxtheme-accent-color-4);
-      --promo-tile-paper-button-learn-border-color: var(--odl-haxtheme-accent-color-4);
-      --promo-tile-paper-button-learn-background-color-active: var(--odl-haxtheme-accent-color-1);
-      /* Elements: Info Box */
-      --haxtheme-info-box-a-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      --haxtheme-info-box-h1-font-size: var(--odl-haxtheme-h1-font-size);
-      --haxtheme-info-box-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      --haxtheme-info-box-inner-wrap-border-left: var(--odl-haxtheme-header-border-left);
-      --haxtheme-info-box-inner-wrap-border-left-width: var(--odl-haxtheme-header-border-left-width);
-      --haxtheme-info-box-inner-wrap-border-left-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-info-box-action-text-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-info-box-action-text-line-height: var(--odl-haxtheme-line-height);
-      --haxtheme-info-box-paper-button-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-info-box-paper-button-color-active: var(--odl-haxtheme-accent-color-1);
-      /* Elements: Page Banner */
-      --haxtheme-page-banner-image-text-h1-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-page-banner-image-text-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      /* Elements: Homepage Banner */
-      --haxtheme-homepage-banner-image-text-h1-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-homepage-banner-image-text-h1-font-weight: var(--odl-haxtheme-h1-font-weight);
-      --haxtheme-homepage-banner-branding-wrap-background-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-homepage-banner-branding-wrap-border-top-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-homepage-banner-logo-image-border-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-homepage-banner-logo-image-background-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-homepage-banner-company-name-h2-color: var(--odl-haxtheme-accent-color-4);
-      /* Elements: Team Card */
-      --haxtheme-team-card-image-border-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-team-card-info-container-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-team-card-name-border-bottom-color: var(--odl-haxtheme-accent-color-4);
-      /* Elements: Page Footer */
-      --haxtheme-page-footer-social-wrap-background-color: var(--odl-haxtheme-accent-color-1);
-      --haxtheme-page-footer-iron-icon-fill: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-page-footer-info-wrap-background-color: var(--odl-haxtheme-accent-color-2);
-      --haxtheme-page-footer-address-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-page-footer-address-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-page-footer-address-font-size: var(--odl-haxtheme-font-size);
-      --haxtheme-page-footer-basement-font-size: var(--odl-haxtheme-font-size);
-      --haxtheme-page-footer-basement-font-weight: var(--odl-haxtheme-font-weight);
-      --haxtheme-page-footer-legal-item-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-page-footer-legal-item-border-right-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-page-footer-legal-item-a-text-decoration: var(--odl-haxtheme-a-text-decoration);
-      --haxtheme-page-footer-legal-item-a-color: var(--odl-haxtheme-accent-color-4);
-      --haxtheme-page-footer-odl-mark-a-background-color: var(--odl-haxtheme-accent-color-2); 
+    #loading {
+      background-color: white;
+      bottom: 0px;
+      left: 0px;
+      opacity: 1;
+      position: absolute;
+      right: 0px;
+      top: 0px;
+      transition: all linear 300ms;
+      -webkit-transition: all linear 300ms;
+      z-index: 99999999;
     }
 
-    a {
-        color: var(--odl-haxtheme-a-color);
-        font-weight: var(--odl-haxtheme-font-weight);
-        font-size: var(--odl-haxtheme-a-font-size);
-        text-decoration: var(--odl-haxtheme-a-text-decoration);
+    #loading.loaded {
+      animation: fade-out .7s ease-in-out;
+      animation-fill-mode: forwards;
     }
-
-    a:active,
-    a:focus,
-    a:hover {
-      color: var(--odl-haxtheme-a-hover-color);
-      text-decoration: var(--odl-haxtheme-a-hover-text-decoration);
+    #loading div.messaging {
+      color: rgba(255,255,255, 0.7);
+      font-family: Roboto;
+      left: 0px;
+      margin-top: -75px;
+      position: absolute;
+      right: 0px;
+      text-align: center;
+      top: 50%;
+      transform: translateY(-50%);
     }
-
-    h1 {
-      font-size: var(--odl-haxtheme-h1-font-size);
-      font-weight: var(--odl-haxtheme-h1-font-weight);
+    #loading div.messaging h1 {
+      color: white;
+      font-family: 'Open Sans', 'arial', 'serif';
+      font-size: 40px;
+      background-color: orange;
+      transition: .4s ease-in-out all;
     }
-
-    h2 {
-      font-size: var(--odl-haxtheme-h2-font-size);
-      font-weight: var(--odl-haxtheme-h2-font-weight);
+    #loading img {
+      transition: .4s all ease-in-out;
+      width: 300px;
+      height: 300px;
+      margin-bottom: 50px;
+      border-radius: 50%;
+      border: 8px solid orange;
+      box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.45);
+      -moz-box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.45);
+	    -webkit-box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.45);
+      -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#444444')";
     }
-    
-
-
-
-
-  </style>
+    .progress-line,
+    .progress-line:before {
+      height: 8px;
+      width: 100%;
+      margin: auto;
+    }
+    .progress-line {
+      background-color: rgba(0,0,0, 0.05);
+      display: -webkit-flex;
+      display: flex;
+      width: 300px;
+    }
+    .progress-line:before {
+      background-color: orange;
+      content: '';
+      animation: running-progress 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes running-progress {
+      0% {
+        margin-left: 0px;
+        margin-right: 100%;
+      }
+      50% {
+        margin-left: 25%;
+        margin-right: 0%;
+      }
+      100% {
+        margin-left: 100%;
+        margin-right: 0;
+      }
+    }
+    @keyframes fade-out {
+      0% {
+        opacity: 1;
+      }
+      99% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    </style>
+    <script id="loadingscript">
+    window.addEventListener('load', function(e) {
+      // give the web components a second to build
+      setTimeout(function() {
+        document.querySelector('#loading').classList.add('loaded');
+        setTimeout(function() {
+          document.querySelector('#loading').parentNode.removeChild(document.querySelector('#loading'));
+          document.querySelector('#loadingstyles').parentNode.removeChild(document.querySelector('#loadingstyles'));
+          document.querySelector('#loadingscript').parentNode.removeChild(document.querySelector('#loadingscript'));
+        }, 600);
+      }, 1000)
+    });
+  </script>
 </head>
-
-<body>
-  <haxcms-site-builder id="site" file="site.json"><div class="loading"><div>Site</div><div>loading</div></div></haxcms-site-builder>
+<body no-js vocab="http://schema.org/" prefix="oer:http://oerschema.org cc:http://creativecommons.org/ns dc:http://purl.org/dc/terms/">
+  <div id="loading">
+    <div class="messaging">
+      <img src="assets/banner.jpg" alt="" loading="lazy" height="300px" width="300px" />
+      <div class="progress-line"></div>
+      <h1>Loading site..</h1>
+    </div>
+  </div>
+  <haxcms-site-builder id="site" file="site.json">
+  </haxcms-site-builder>
   <div id="haxcmsoutdatedfallback">
-    <haxcms-legacy-player file="site.json"></haxcms-legacy-player>
     <div id="haxcmsoutdatedfallbacksuperold"> 
       <iframe id="outline" style="width:18%;float:left;height:500px;padding:0;margin:0;" name="outline" id="frame1"
-        src="legacy-outline.html"></iframe>
-      <iframe id="content" style="width:80%;float:left;height:500px;padding:0;margin:0;" name="content" id="frame2" src=""></iframe>
+        src="legacy-outline.html" loading="lazy"></iframe>
+      <iframe id="content" style="width:80%;float:left;height:500px;padding:0;margin:0;" name="content" id="frame2" src="" loading="lazy"></iframe>
       <div style="float:left;padding:16px 0;font-size:32px;text-align: center;width:100%;">Please use a modern browser to
         view our website correctly. <a href="http://outdatedbrowser.com/">Update my browser now</a></div>
     </div>
   </div>
-  <script>document.body.removeAttribute('no-js');</script>
-  <script src="node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
-  <script type="module" src="dist/build.js"></script>
-  <script async src="node_modules/web-animations-js/web-animations-next-lite.min.js"></script>
-  <!-- use this to test the legacy build
-    <script type="module" src="dist/build-legacy.js"></script>
-  -->
+  <script>document.body.removeAttribute('no-js');window.__appCDN="./";window.__appForceUpgrade=false;</script>
+  <!-- Reverse engineer of build.js based on what's needed to test locally -->
+  <script type="module">
+    import "@lrnwebcomponents/wc-autoload/wc-autoload.js";
+    import "./custom/src/custom.js";
+  </script>
   <script>
+    window.WCAutoloadRegistryFile = window.__appCDN + "wc-registry.json";
     // set this in order to simulate the published form of the site
-    // window.__haxCMSContextPublished = true;
+    //window.HAXCMSContext="published";
     // set the below to simulate running a demo / end points to load data
     // this will let you simulate more operations without having a backend
-    window.__haxCMSContextDemo = true;
+    window.HAXCMSContext="demo";
     window.appSettings = {
-      "login": "dist\/dev\/login.json",
-      "logout": "dist\/dev\/logout.json",
-      "saveNodePath": "dist\/dev\/saveNode.json",
-      "saveManifestPath": "dist\/dev\/saveManifestPath.json",
       "createNodePath": "dist\/dev\/saveNode.json",
-      "deleteNodePath": "dist\/dev\/saveNode.json",
       "saveOutlinePath": "dist\/dev\/saveNode.json",
-      "publishSitePath": "dist\/dev\/saveNode.json",
       "getNodeFieldsPath": "dist\/dev\/getNodeFieldsPath.json",
+      "saveManifestPath": "dist\/dev\/saveManifestPath.json",
       "getSiteFieldsPath": "dist\/dev\/getSiteFieldsPath.json",
+      "deleteNodePath": "dist\/dev\/saveNode.json",
+      "saveNodePath": "dist\/dev\/saveNode.json",
+      "getUserDataPath": "dist\/dev\/userData.json",
+      "login": "dist\/dev\/login.json",
+      "refreshUrl": "dist\/dev\/refreshUrl.json",
+      "logout": "dist\/dev\/logout.json",
+      "connectionSettings": "dist\/dev\/connectionSettings.json",
+      "publishSitePath": "dist\/dev\/saveNode.json",
       "revertSitePath": "dist\/dev\/saveNode.json",
       "getFieldsToken": "adskjadshjudfu823u823u8fu8fij",
       "appStore": {
         "url": "dist\/dev\/appstore.json"
       },
+      "jwt": "made-up-thing",
       // add your custom theme here if testing locally and wanting to emulate the theme selector
       // this isn't really nessecary though
       "themes": { 
@@ -402,14 +1365,13 @@
         }
       }
     };
-    // append global base styles
-    var link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'node_modules/@lrnwebcomponents/haxcms-elements/lib/base.css';
-    link.type = 'text/css';
-    var def = document.getElementsByTagName('link')[0];
-    def.parentNode.insertBefore(link, def);
+  </script>
+  <script defer async>
+    setTimeout(() => {
+      if (document.getElementById("haxcmsoutdatedfallback")) {
+        document.body.removeChild(document.getElementById("haxcmsoutdatedfallback"));
+      }
+    }, 100);
   </script>
 </body>
-
 </html>

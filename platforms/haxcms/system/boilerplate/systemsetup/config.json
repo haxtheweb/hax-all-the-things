@@ -576,9 +576,9 @@
         "lrn-aside": "@lrnwebcomponents/lrn-aside/lrn-aside.js",
         "md-block": "@lrnwebcomponents/md-block/md-block.js",
         "grid-plate": "@lrnwebcomponents/grid-plate/grid-plate.js",
-        "tab-list": "@lrnwebcomponents/tab-list/tab-list.js",
         "magazine-cover": "@lrnwebcomponents/magazine-cover/magazine-cover.js",
         "video-player": "@lrnwebcomponents/video-player/video-player.js",
+        "editable-table-display": "@lrnwebcomponents/editable-table/lib/editable-table-display.js",
         "image-compare-slider": "@lrnwebcomponents/image-compare-slider/image-compare-slider.js",
         "license-element": "@lrnwebcomponents/license-element/license-element.js",
         "self-check": "@lrnwebcomponents/self-check/self-check.js",
@@ -590,8 +590,9 @@
         "media-image": "@lrnwebcomponents/media-image/media-image.js",
         "lrndesign-blockquote": "@lrnwebcomponents/lrndesign-blockquote/lrndesign-blockquote.js",
         "meme-maker": "@lrnwebcomponents/meme-maker/meme-maker.js",
+        "music-player": "@lrnwebcomponents/music-player/music-player.js",
+        "twitter-embed": "@lrnwebcomponents/twitter-embed/twitter-embed.js",
         "a11y-gif-player": "@lrnwebcomponents/a11y-gif-player/a11y-gif-player.js",
-        "paper-audio-player": "@lrnwebcomponents/paper-audio-player/paper-audio-player.js",
         "wikipedia-query": "@lrnwebcomponents/wikipedia-query/wikipedia-query.js",
         "lrn-vocab": "@lrnwebcomponents/lrn-vocab/lrn-vocab.js",
         "lrn-math": "@lrnwebcomponents/lrn-math/lrn-math.js",
@@ -605,7 +606,9 @@
         "lrndesign-timeline": "@lrnwebcomponents/lrndesign-timeline/lrndesign-timeline.js",
         "html-block": "@lrnwebcomponents/html-block/html-block.js",
         "user-action": "@lrnwebcomponents/user-action/user-action.js",
-        "rss-items": "@lrnwebcomponents/rss-items/rss-items.js"
+        "rss-items": "@lrnwebcomponents/rss-items/rss-items.js",
+        "date-card": "@lrnwebcomponents/date-card/date-card.js",
+        "service-card": "@lrnwebcomponents/service-card/service-card.js"
     },
       "apiKeys": {
           "youtube": "",
@@ -618,10 +621,13 @@
           "pixabay": ""
       }
   },
-  "publishing": {
+  "site": {
     "git": {
         "vendor": "github",
         "branch": "gh-pages"
+    },
+    "static": {
+        "cdn": "cdn.webcomponents.psu.edu"
     }
   }
 }

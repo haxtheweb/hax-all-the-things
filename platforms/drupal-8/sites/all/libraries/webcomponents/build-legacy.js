@@ -1,1 +1,0 @@
-../../../../../../build-integration/build-legacy.js
