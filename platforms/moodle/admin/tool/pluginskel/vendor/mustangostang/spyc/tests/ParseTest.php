@@ -1,13 +1,11 @@
 <?php
 
-require_once ("../Spyc.php");
-
 class ParseTest extends PHPUnit_Framework_TestCase {
 
     protected $yaml;
 
     protected function setUp() {
-      $this->yaml = spyc_load_file('../spyc.yaml');
+      $this->yaml = spyc_load_file(__DIR__.'/../spyc.yaml');
     }
 
     public function testMergeHashKeys() {
@@ -15,19 +13,19 @@ class ParseTest extends PHPUnit_Framework_TestCase {
         array ('step' => array('instrument' => 'Lasik 2000', 'pulseEnergy' => 5.4, 'pulseDuration' => 12, 'repetition' => 1000, 'spotSize' => '1mm')),
         array ('step' => array('instrument' => 'Lasik 2000', 'pulseEnergy' => 5.4, 'pulseDuration' => 12, 'repetition' => 1000, 'spotSize' => '2mm')),
       );
-      $Actual = spyc_load_file ('indent_1.yaml');
+      $Actual = spyc_load_file (__DIR__.'/indent_1.yaml');
       $this->assertEquals ($Expected, $Actual['steps']);
     }
 
     public function testDeathMasks() {
       $Expected = array ('sad' => 2, 'magnificent' => 4);
-      $Actual = spyc_load_file ('indent_1.yaml');
+      $Actual = spyc_load_file (__DIR__.'/indent_1.yaml');
       $this->assertEquals ($Expected, $Actual['death masks are']);
     }
 
     public function testDevDb() {
       $Expected = array ('adapter' => 'mysql', 'host' => 'localhost', 'database' => 'rails_dev');
-      $Actual = spyc_load_file ('indent_1.yaml');
+      $Actual = spyc_load_file (__DIR__.'/indent_1.yaml');
       $this->assertEquals ($Expected, $Actual['development']);
     }
 
@@ -41,6 +39,11 @@ class ParseTest extends PHPUnit_Framework_TestCase {
 
     public function testMappingsInt() {
       $this->assertSame (13, $this->yaml['Int']);
+    }
+
+    public function testMappingsHex() {
+      $this->assertSame (243, $this->yaml['Hex']);
+      $this->assertSame ('f0xf3', $this->yaml['BadHex']);
     }
 
     public function testMappingsBooleanTrue() {
@@ -76,9 +79,12 @@ class ParseTest extends PHPUnit_Framework_TestCase {
     }
 
     public function testNewline() {
-      $this->assertSame ("\n", $this->yaml['NewLine']);
+      $this->assertSame ('\n', $this->yaml['NewLine']);
     }
 
+    public function testQuotedNewline() {
+      $this->assertSame ("\n", $this->yaml['QuotedNewLine']);
+    }
 
     public function testSeq0() {
       $this->assertEquals ("PHP Class", $this->yaml[0]);
@@ -189,6 +195,10 @@ class ParseTest extends PHPUnit_Framework_TestCase {
 
     public function testShortSequence() {
       $this->assertEquals (array( 0 => "a", 1 => array (0 => 1, 1 => 2), 2 => "b"), $this->yaml[16]);
+    }
+
+    public function testQuotedNewlines() {
+      $this->assertEquals ("First line\nSecond line\nThird line", $this->yaml[17]);
     }
 
     public function testHash_1() {
@@ -306,50 +316,98 @@ dog', $this->yaml['many_lines']);
       $this->assertSame (array (2000), $this->yaml['a:2']);
     }
 
+    public function testUnquotedColonsInKeys() {
+        $this->assertSame (array (3000), $this->yaml['a:3']);
+    }
+
+    public function testComplicatedKeyWithColon() {
+        $this->assertSame(array("a:b:''test'" => 'value'), $this->yaml['complex_unquoted_key']);
+    }
+
+    public function testKeysInMappedValueException() {
+        $this->setExpectedException('Exception');
+        Spyc::YAMLLoad('x: y: z:');
+    }
+
+    public function testKeysInValueException() {
+        $this->setExpectedException('Exception');
+        Spyc::YAMLLoad('x: y: z');
+    }
+
     public function testSpecialCharacters() {
       $this->assertSame ('[{]]{{]]', $this->yaml['special_characters']);
     }
 
     public function testAngleQuotes() {
-      $Quotes = Spyc::YAMLLoad('quotes.yaml');
+      $Quotes = Spyc::YAMLLoad(__DIR__.'/quotes.yaml');
       $this->assertEquals (array ('html_tags' => array ('<br>', '<p>'), 'html_content' => array ('<p>hello world</p>', 'hello<br>world'), 'text_content' => array ('hello world')),
           $Quotes);
     }
 
     public function testFailingColons() {
-      $Failing = Spyc::YAMLLoad('failing1.yaml');
+      $Failing = Spyc::YAMLLoad(__DIR__.'/failing1.yaml');
       $this->assertSame (array ('MyObject' => array ('Prop1' => array ('key1:val1'))),
           $Failing);
     }
 
     public function testQuotesWithComments() {
       $Expected = 'bar';
-      $Actual = spyc_load_file ('comments.yaml');
+      $Actual = spyc_load_file (__DIR__.'/comments.yaml');
       $this->assertEquals ($Expected, $Actual['foo']);
     }
 
     public function testArrayWithComments() {
       $Expected = array ('x', 'y', 'z');
-      $Actual = spyc_load_file ('comments.yaml');
+      $Actual = spyc_load_file (__DIR__.'/comments.yaml');
       $this->assertEquals ($Expected, $Actual['arr']);
     }
 
     public function testAfterArrayWithKittens() {
       $Expected = 'kittens';
-      $Actual = spyc_load_file ('comments.yaml');
+      $Actual = spyc_load_file (__DIR__.'/comments.yaml');
       $this->assertEquals ($Expected, $Actual['bar']);
     }
 
+    // Plain characters http://www.yaml.org/spec/1.2/spec.html#id2789510
     public function testKai() {
-      $Expected = array (array ('example' => 'value'));
-      $Actual = spyc_load_file ('indent_1.yaml');
+      $Expected = array('-example' => 'value');
+      $Actual = spyc_load_file (__DIR__.'/indent_1.yaml');
       $this->assertEquals ($Expected, $Actual['kai']);
     }
 
     public function testKaiList() {
-      $Expected = array ('-item', '-item', 'item');
-      $Actual = spyc_load_file ('indent_1.yaml');
+      $Expected = array ('-item', '-item', '-item');
+      $Actual = spyc_load_file (__DIR__.'/indent_1.yaml');
       $this->assertEquals ($Expected, $Actual['kai_list_of_items']);
     }
 
+    public function testDifferentQuoteTypes() {
+      $expected = array ('Something', "", "", "Something else");
+      $this->assertSame ($expected, $this->yaml['invoice']);
+    }
+
+    public function testDifferentQuoteTypes2() {
+      $expected = array ('Something', "Nothing", "Anything", "Thing");
+      $this->assertSame ($expected, $this->yaml['quotes']);
+    }
+
+    // Separation spaces http://www.yaml.org/spec/1.2/spec.html#id2778394
+    public function testMultipleArrays() {
+      $expected = array(array(array('x')));
+      $this->assertSame($expected, Spyc::YAMLLoad("- - - x"));
+    }
+
+    public function testElementWithEmptyHash()
+    {
+        $element = "hash: {}\narray: []";
+        $yaml = Spyc::YAMLLoadString($element);
+        $this->assertEquals($yaml['hash'], []);
+        $this->assertEquals($yaml['array'], []);
+
+        $yaml = Spyc::YAMLLoadString($element, [
+            'setting_empty_hash_as_object' => true
+        ]);
+        $this->assertInstanceOf(stdClass::class, $yaml['hash']);
+        $this->assertEquals($yaml['array'], []);
+    }
 }

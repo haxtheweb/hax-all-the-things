@@ -1,6 +1,6 @@
 {
     "require": {
-        "monolog/monolog": "^1.19",
-        "mustangostang/spyc": "^0.5.1"
+        "monolog/monolog": "^2.0",
+        "mustangostang/spyc": "^0.6.0"
     }
 }
