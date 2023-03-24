@@ -26,7 +26,7 @@
     "utf8": "3.0.0",
     "mime": "2.4.4",
     "nodegit": "0.26.4",
-    "jsonwebtoken": "8.5.1",
+    "jsonwebtoken": "9.0.0",
     "cookie-parser": "1.4.4"
   },
   "devDependencies": {
