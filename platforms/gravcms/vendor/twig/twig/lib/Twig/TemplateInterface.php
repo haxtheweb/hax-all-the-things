@@ -9,6 +9,8 @@
  * file that was distributed with this source code.
  */
 
+use Twig\Environment;
+
 /**
  * Interface implemented by all compiled templates.
  *
@@ -18,9 +20,9 @@
  */
 interface Twig_TemplateInterface
 {
-    const ANY_CALL = 'any';
-    const ARRAY_CALL = 'array';
-    const METHOD_CALL = 'method';
+    public const ANY_CALL = 'any';
+    public const ARRAY_CALL = 'array';
+    public const METHOD_CALL = 'method';
 
     /**
      * Renders the template with the given context and returns it as string.
@@ -42,7 +44,7 @@ interface Twig_TemplateInterface
     /**
      * Returns the bound environment for this template.
      *
-     * @return Twig_Environment
+     * @return Environment
      */
     public function getEnvironment();
 }
