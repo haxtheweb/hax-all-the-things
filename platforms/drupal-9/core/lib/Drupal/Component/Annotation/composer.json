@@ -7,9 +7,9 @@
   "require": {
     "php": ">=7.3.0",
     "doctrine/annotations": "^1.4",
-    "drupal/core-file-cache": "^8.8",
-    "drupal/core-plugin": "^8.8",
-    "drupal/core-utility": "^8.8"
+    "drupal/core-file-cache": "^9.0",
+    "drupal/core-plugin": "^9.0",
+    "drupal/core-utility": "^9.0"
   },
   "autoload": {
     "psr-4": {

@@ -30,7 +30,7 @@
     "require-dev": {
         "symfony/phpunit-bridge": "^4.4@dev|^5.0",
         "symfony/debug": "^3.4|^4.2",
-        "psr/container": "^1.0"
+        "psr/container": "^2.0"
     },
     "autoload": {
         "psr-0" : {

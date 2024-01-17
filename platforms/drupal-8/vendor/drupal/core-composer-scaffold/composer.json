@@ -27,6 +27,6 @@
     "sort-packages": true
   },
   "require-dev": {
-    "composer/composer": "^1.8@stable"
+    "composer/composer": "^2.0.0@stable"
   }
 }

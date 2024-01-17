@@ -1,11 +1,11 @@
-FROM node:12-alpine as dev
+FROM node:16-alpine as dev
 WORKDIR /app
 COPY package.json .
 RUN yarn install
 COPY . .
 CMD [ "yarn", "start" ]
 
-FROM node:12-alpine as build
+FROM node:16-alpine as build
 WORKDIR /app
 COPY --from=dev /app /app
 RUN yarn build

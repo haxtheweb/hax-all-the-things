@@ -13,7 +13,7 @@
 		"ext-openssl": "*",
 		"automattic/jetpack-abtest": "^1.0",
 		"automattic/jetpack-assets": "^1.1",
-		"automattic/jetpack-autoloader": "^1.5",
+		"automattic/jetpack-autoloader": "^2.0",
 		"automattic/jetpack-backup": "^1.0",
 		"automattic/jetpack-compat": "^1.0",
 		"automattic/jetpack-config": "^1.1",
@@ -31,11 +31,11 @@
 		"automattic/jetpack-tracking": "^1.2"
 	},
 	"require-dev": {
-		"dealerdirect/phpcodesniffer-composer-installer": "0.6.2",
-		"phpcompatibility/phpcompatibility-wp": "2.1.0",
-		"sirbrillig/phpcs-changed": "2.2.7",
-		"sirbrillig/phpcs-variable-analysis": "2.8.1",
-		"wp-coding-standards/wpcs": "2.2.1"
+		"dealerdirect/phpcodesniffer-composer-installer": "0.7.1",
+		"phpcompatibility/phpcompatibility-wp": "2.1.2",
+		"sirbrillig/phpcs-changed": "2.8.1",
+		"sirbrillig/phpcs-variable-analysis": "2.11.2",
+		"wp-coding-standards/wpcs": "2.3.0"
 	},
 	"scripts": {
 		"php:compatibility": "vendor/bin/phpcs -p -s --runtime-set testVersion '5.6-' --standard=PHPCompatibilityWP --ignore=docker,tools,tests,node_modules,vendor --extensions=php",

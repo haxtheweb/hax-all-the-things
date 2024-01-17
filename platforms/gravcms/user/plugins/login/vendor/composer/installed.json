@@ -1,35 +1,38 @@
 [
     {
         "name": "bacon/bacon-qr-code",
-        "version": "1.0.3",
-        "version_normalized": "1.0.3.0",
+        "version": "2.0.4",
+        "version_normalized": "2.0.4.0",
         "source": {
             "type": "git",
             "url": "https://github.com/Bacon/BaconQrCode.git",
-            "reference": "5a91b62b9d37cee635bbf8d553f4546057250bee"
+            "reference": "f73543ac4e1def05f1a70bcd1525c8a157a1ad09"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/Bacon/BaconQrCode/zipball/5a91b62b9d37cee635bbf8d553f4546057250bee",
-            "reference": "5a91b62b9d37cee635bbf8d553f4546057250bee",
+            "url": "https://api.github.com/repos/Bacon/BaconQrCode/zipball/f73543ac4e1def05f1a70bcd1525c8a157a1ad09",
+            "reference": "f73543ac4e1def05f1a70bcd1525c8a157a1ad09",
             "shasum": ""
         },
         "require": {
+            "dasprid/enum": "^1.0.3",
             "ext-iconv": "*",
-            "php": "^5.4|^7.0"
+            "php": "^7.1 || ^8.0"
         },
         "require-dev": {
-            "phpunit/phpunit": "^4.8"
+            "phly/keep-a-changelog": "^1.4",
+            "phpunit/phpunit": "^7 | ^8 | ^9",
+            "squizlabs/php_codesniffer": "^3.4"
         },
         "suggest": {
-            "ext-gd": "to generate QR code images"
+            "ext-imagick": "to generate QR code images"
         },
-        "time": "2017-10-17T09:59:25+00:00",
+        "time": "2021-06-18T13:26:35+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
-            "psr-0": {
-                "BaconQrCode": "src/"
+            "psr-4": {
+                "BaconQrCode\\": "src/"
             }
         },
         "notification-url": "https://packagist.org/downloads/",
@@ -40,7 +43,7 @@
             {
                 "name": "Ben Scholzen 'DASPRiD'",
                 "email": "mail@dasprids.de",
-                "homepage": "http://www.dasprids.de",
+                "homepage": "https://dasprids.de/",
                 "role": "Developer"
             }
         ],
@@ -49,31 +52,39 @@
     },
     {
         "name": "birke/rememberme",
-        "version": "1.0.5",
-        "version_normalized": "1.0.5.0",
+        "version": "4.0.1",
+        "version_normalized": "4.0.1.0",
         "source": {
             "type": "git",
             "url": "https://github.com/gbirke/rememberme.git",
-            "reference": "810473852eb4823098e47e23376a19b77ba0c165"
+            "reference": "fe2a5b2d20651bad1a8fd04f52d244a7dd66684f"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/gbirke/rememberme/zipball/810473852eb4823098e47e23376a19b77ba0c165",
-            "reference": "810473852eb4823098e47e23376a19b77ba0c165",
+            "url": "https://api.github.com/repos/gbirke/rememberme/zipball/fe2a5b2d20651bad1a8fd04f52d244a7dd66684f",
+            "reference": "fe2a5b2d20651bad1a8fd04f52d244a7dd66684f",
             "shasum": ""
         },
         "require": {
-            "paragonie/random_compat": "^1.1.4"
+            "php": "^7.4 || ^8.0"
         },
         "require-dev": {
-            "phpunit/phpunit": "4.*"
+            "escapestudios/symfony2-coding-standard": "~3.11",
+            "ircmaxell/random-lib": "^1.1",
+            "phpunit/phpunit": "^9.5",
+            "squizlabs/php_codesniffer": "^3.5"
         },
-        "time": "2017-02-12T12:43:00+00:00",
+        "suggest": {
+            "ext-pdo": "*",
+            "ircmaxell/random-lib": "For generating random tokens with different entropy sources",
+            "predis/predis": "Needed if you used Redis storage"
+        },
+        "time": "2021-04-26T19:20:29+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
             "psr-4": {
-                "Birke\\": "src/"
+                "Birke\\Rememberme\\": "src/"
             }
         },
         "notification-url": "https://packagist.org/downloads/",
@@ -95,53 +106,48 @@
         ]
     },
     {
-        "name": "paragonie/random_compat",
-        "version": "v1.4.3",
-        "version_normalized": "1.4.3.0",
+        "name": "dasprid/enum",
+        "version": "1.0.3",
+        "version_normalized": "1.0.3.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/paragonie/random_compat.git",
-            "reference": "9b3899e3c3ddde89016f576edb8c489708ad64cd"
+            "url": "https://github.com/DASPRiD/Enum.git",
+            "reference": "5abf82f213618696dda8e3bf6f64dd042d8542b2"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/paragonie/random_compat/zipball/9b3899e3c3ddde89016f576edb8c489708ad64cd",
-            "reference": "9b3899e3c3ddde89016f576edb8c489708ad64cd",
+            "url": "https://api.github.com/repos/DASPRiD/Enum/zipball/5abf82f213618696dda8e3bf6f64dd042d8542b2",
+            "reference": "5abf82f213618696dda8e3bf6f64dd042d8542b2",
             "shasum": ""
         },
-        "require": {
-            "php": ">=5.2.0"
-        },
         "require-dev": {
-            "phpunit/phpunit": "4.*|5.*"
+            "phpunit/phpunit": "^7 | ^8 | ^9",
+            "squizlabs/php_codesniffer": "^3.4"
         },
-        "suggest": {
-            "ext-libsodium": "Provides a modern crypto API that can be used to generate random bytes."
-        },
-        "time": "2018-04-04T21:48:54+00:00",
+        "time": "2020-10-02T16:03:48+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
-            "files": [
-                "lib/random.php"
-            ]
+            "psr-4": {
+                "DASPRiD\\Enum\\": "src/"
+            }
         },
         "notification-url": "https://packagist.org/downloads/",
         "license": [
-            "MIT"
+            "BSD-2-Clause"
         ],
         "authors": [
             {
-                "name": "Paragon Initiative Enterprises",
-                "email": "security@paragonie.com",
-                "homepage": "https://paragonie.com"
+                "name": "Ben Scholzen 'DASPRiD'",
+                "email": "mail@dasprids.de",
+                "homepage": "https://dasprids.de/",
+                "role": "Developer"
             }
         ],
-        "description": "PHP 5.x polyfill for random_bytes() and random_int() from PHP 7",
+        "description": "PHP 7.1 enum implementation",
         "keywords": [
-            "csprng",
-            "pseudorandom",
-            "random"
+            "enum",
+            "map"
         ]
     },
     {

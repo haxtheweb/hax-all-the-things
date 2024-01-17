@@ -6,7 +6,7 @@
   "license": "GPL-2.0-or-later",
   "require": {
     "php": ">=7.3.0",
-    "drupal/core-render": "^8.8"
+    "drupal/core-render": "^9.0"
   },
   "autoload": {
     "psr-4": {

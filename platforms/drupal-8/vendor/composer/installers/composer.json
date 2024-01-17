@@ -98,8 +98,8 @@
         "composer-plugin-api": "^1.0"
     },
     "require-dev": {
-        "composer/composer": "1.0.*@dev",
-        "phpunit/phpunit": "^4.8.36"
+        "composer/composer": "2.1.*@dev",
+        "phpunit/phpunit": "^9.0.0"
     },
     "scripts": {
         "test": "phpunit"

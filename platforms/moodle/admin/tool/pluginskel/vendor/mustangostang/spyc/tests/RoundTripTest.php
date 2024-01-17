@@ -1,7 +1,5 @@
 <?php
 
-require_once ("../Spyc.php");
-
 function roundTrip($a) { return Spyc::YAMLLoad(Spyc::YAMLDump(array('x' => $a))); }
 
 
@@ -40,6 +38,23 @@ class RoundTripTest extends PHPUnit_Framework_TestCase {
 
     public function testHashes() {
       $this->assertEquals (array ('x' => array ("#color" => '#fff')), roundTrip (array ("#color" => '#fff')));
+    }
+
+    public function testPreserveString() {
+      $result1 = roundTrip ('0');
+      $result2 = roundTrip ('true');
+      $this->assertTrue (is_string ($result1['x']));
+      $this->assertTrue (is_string ($result2['x']));
+    }
+
+    public function testPreserveBool() {
+      $result = roundTrip (true);
+      $this->assertTrue (is_bool ($result['x']));
+    }
+
+    public function testPreserveInteger() {
+      $result = roundTrip (0);
+      $this->assertTrue (is_int ($result['x']));
     }
 
     public function testWordWrap() {

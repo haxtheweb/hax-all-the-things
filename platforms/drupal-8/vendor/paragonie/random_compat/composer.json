@@ -25,7 +25,7 @@
     "php": "^7"
   },
   "require-dev": {
-    "vimeo/psalm": "^1",
+    "vimeo/psalm": "^4",
     "phpunit/phpunit": "4.*|5.*"
   },
   "suggest": {
